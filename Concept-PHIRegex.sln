@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Concept-PHIRegex", "Concept-PHIRegex.csproj", "{0ACE091B-6B6E-4CDD-9C0E-133DDAC1A970}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0ACE091B-6B6E-4CDD-9C0E-133DDAC1A970}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0ACE091B-6B6E-4CDD-9C0E-133DDAC1A970}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0ACE091B-6B6E-4CDD-9C0E-133DDAC1A970}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0ACE091B-6B6E-4CDD-9C0E-133DDAC1A970}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {89FDC3AE-7F15-42B9-8CC3-984460F974FF}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,8 @@
+==================================|PHI analyze program|==================================
+
+        Welcome! This is the concept of PHI analyze program
+        Type in the path of the Folder / File to analyze the designed target
+        OR leave the blank to analyze the files where the program currently located
+
+==================================|For Testing purpose|==================================
+Target path of folder or file: 
