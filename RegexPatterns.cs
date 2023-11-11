@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace RegexTest;
+namespace ConceptPHIRegex;
 internal partial class RegexPatterns
 {
     #region PHI: ID

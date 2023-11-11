@@ -1,19 +1,15 @@
 ﻿using System.Reflection;
 
-namespace RegexTest;
+namespace ConceptPHIRegex;
 
 internal class Utils
 {
     internal static string ReadIntroTexts()
     {
         Assembly CurrentASM = Assembly.GetExecutingAssembly();
-        using Stream? stream = CurrentASM.GetManifestResourceStream("RegexTest.welcome.txt");
-        if (stream != null)
-        {
-            using StreamReader Reader = new(stream);
-            return Reader.ReadToEnd();
-        }
-        throw new NullReferenceException();
+        using Stream? stream = CurrentASM.GetManifestResourceStream("Concept-PHIRegex.welcome.txt") ?? throw new FileNotFoundException();
+        using StreamReader Reader = new(stream);
+        return Reader.ReadToEnd();
     }
 
     internal static string ReadRawData(string Filepath)

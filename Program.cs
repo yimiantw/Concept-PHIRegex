@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.VisualBasic;
 
-namespace RegexTest;
+namespace ConceptPHIRegex;
 
 internal partial class Program
 {
@@ -16,6 +16,7 @@ internal partial class Program
 #if !DEBUG
             string InputPath = GetConsoleInput();
             IEnumerable<string> FilesArray = Enumerable.Empty<string>();
+            //Check whether the input is a directory or a file
             if (File.GetAttributes(InputPath).HasFlag(FileAttributes.Directory))
             {
                 //Enumerate all text (.txt) files
@@ -38,11 +39,11 @@ internal partial class Program
 #else
             IEnumerable<string> FilesArray = new string[] { @"D:\Second_Phase_Text_Dataset\1093.txt" };
             //IEnumerable<string> FilesArray = new string[] { @"D:\First_Phase_Text_Dataset\491.txt" };
-            //""
 #endif
             //Calcuate process time
             Stopwatch ProcessTime = new();
             ProcessTime.Start();
+            Console.Title = "Processing data...Please don't close the window";
 
             //Initialize data class
             List<PHIData> List_PHIData = new();
@@ -92,7 +93,7 @@ internal partial class Program
             Input = Input!.Replace("\"", string.Empty);
             if (string.IsNullOrEmpty(Input))
             {
-                return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+                return AppContext.BaseDirectory;
             }
             if (Path.Exists(Input))
                 return Input;

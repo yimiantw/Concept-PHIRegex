@@ -1,4 +1,4 @@
-﻿namespace RegexTest;
+﻿namespace ConceptPHIRegex;
 
 internal class RegexData
 {
