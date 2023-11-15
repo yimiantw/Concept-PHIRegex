@@ -1,9 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
-using System.Text;
-using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.VisualBasic;
 
 namespace ConceptPHIRegex;
 
@@ -11,6 +7,9 @@ internal partial class Program
 {
     static void Main()
     {
+        //Read config
+        Config.ReadConfig();
+
         try
         {
 #if !DEBUG
@@ -36,6 +35,10 @@ internal partial class Program
             {
                 FilesArray = new string[] { InputPath };
             }
+
+            //Save path to config
+            Config.AppConfig.PreviousLocation = InputPath;
+            Config.WriteConfig();
 #else
             IEnumerable<string> FilesArray = new string[] { @"D:\Second_Phase_Text_Dataset\1093.txt" };
             //IEnumerable<string> FilesArray = new string[] { @"D:\First_Phase_Text_Dataset\491.txt" };
@@ -43,11 +46,12 @@ internal partial class Program
             //Calcuate process time
             Stopwatch ProcessTime = new();
             ProcessTime.Start();
-            Console.Title = "Processing data...Please don't close the window";
+            Console.Title = "Processing data...";
+            Console.WriteLine("Processing data...Please don't close the window");
 
             //Initialize data class
-            List<PHIData> List_PHIData = new();
-            List<string> opt = new();
+            List<PHIData> List_PHIData = [];
+            List<string> opt = [];
             foreach (string item in FilesArray)
             {
                 string RawData = Utils.ReadRawData(item);
@@ -60,17 +64,27 @@ internal partial class Program
             //Display processed time
             ProcessTime.Stop();
             Console.WriteLine(Environment.NewLine);
+            Console.Title = "Done!";
             Console.WriteLine("Total files: {0} | Process Time: {1}ms", FilesArray.Count(), ProcessTime.ElapsedMilliseconds);
-            StreamWriter sw = new(@"D:\answer.txt");
+
+            // Write results into text file
+            string SaveLocation = Path.Combine(!string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
+                                    ? Config.AppConfig.SaveLocation
+                                    : AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
+            StreamWriter sw = new(SaveLocation);
             sw.WriteLine(string.Join(Environment.NewLine, opt));
             sw.Close();
             Console.WriteLine($@"The results are saved to D:\answer.txt, press Y key open the file or any key to close.");
+
+            //Ask user whether want to open the result file
             if (Console.ReadKey().Key == ConsoleKey.Y)
             {
                 ProcessStartInfo info = new()
                 {
-                    FileName = @"C:\Program Files\VSCodium\VSCodium.exe",
-                    Arguments = @"D:\answer.txt"
+                    FileName = Config.AppConfig.EditorLocation,
+                    Arguments = !string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
+                                ? SaveLocation
+                                : AppContext.BaseDirectory + Config.AppConfig.SaveFilename,
                 };
                 Process.Start(info);
             };
@@ -84,22 +98,39 @@ internal partial class Program
 
     internal static string GetConsoleInput()
     {
+        //Load intro texts here, not in the loop
         string IntroTexts = Utils.ReadIntroTexts();
         while (true)
         {
+            if (!string.IsNullOrEmpty(Config.AppConfig.PreviousLocation))
+            {
+                Console.WriteLine($"Found previous location: {Config.AppConfig.PreviousLocation}");
+                Console.WriteLine($"Type \"Y\" to use it");
+            }
             Console.Write(IntroTexts);
             string? Input = Console.ReadLine();
-            Console.Clear();
-            Input = Input!.Replace("\"", string.Empty);
-            if (string.IsNullOrEmpty(Input))
+            if (Input != null)
             {
-                return AppContext.BaseDirectory;
-            }
-            if (Path.Exists(Input))
-                return Input;
-            else
+                //Clear console
+                Console.Clear();
+                Input = Input.Replace("\"", string.Empty);
+                //If input is empty, use program's location
+                if (string.IsNullOrEmpty(Input))
+                {
+                    return AppContext.BaseDirectory;
+                }
+                //If input is Y, use previous location
+                if (!string.IsNullOrEmpty(Config.AppConfig.PreviousLocation) && Input.ToUpper().Equals("Y"))
+                {
+                    return Config.AppConfig.PreviousLocation;
+                }
+                //If input is NOT empty, use input path
+                if (Path.Exists(Input))
+                {
+                    return Input;
+                }
                 Console.WriteLine("Error: The folder or file doesn't exist, please try again.");
-
+            }
         }
     }
 
@@ -209,7 +240,7 @@ internal partial class Program
 
         #region Match: Date & Time
         MatchCollection Regex_DateAndTime = RegexPatterns.DateAndTime().Matches(RawData);
-        if (Regex_DateAndTime.Any())
+        if (Regex_DateAndTime.Count > 0)
         {
             IEnumerable<string> Dates = Regex_DateAndTime.Where(x => !x.Value.Contains("at") & !x.Value.Contains("on")).Select(x => x.Value);
             IEnumerable<string> Times = Regex_DateAndTime.Where(x => !Dates.Contains(x.Value)).Select(x => x.Value);
@@ -297,7 +328,7 @@ internal partial class Program
 
         #region Match: Organization
         MatchCollection Regex_Organization = RegexPatterns.Organization().Matches(RawData);
-        if (Regex_Organization.Any())
+        if (Regex_Organization.Count > 0)
         {
             foreach (Match MatchOrg in Regex_Organization.Cast<Match>())
             {
@@ -396,7 +427,7 @@ internal partial class Program
         }
         #endregion
 
-        //#region Match: Profession
+        #region Match: Profession
         //Match Regex_Profession = RegexPatterns.Profession().Match(RawData);
         //if (Regex_Profession.Success)
         //{
@@ -407,115 +438,48 @@ internal partial class Program
         //        EndIndex = RawData.IndexOf(Regex_Profession.Value) + Regex_Profession.Value.Length
         //    };
         //}
-        //#endregion
+        #endregion
 
         return Data;
     }
 
-    internal static string GenerateOutput(string Filename, PHIData item)
+    internal static string GenerateOutput(string Filename, PHIData Data)
     {
-        List<string> OutputText = new();
-        if (item.IDs.Any())
+        List<string> OutputText = [];
+        (object Data, string Text)[] PHI = new (object, string)[]
         {
-            foreach (RegexData ID in item.IDs)
+            (Data.IDs, "IDNUM"), (Data.MedicalRecord, "MEDICALRECORD"), (Data.Patient, "PATIENT"), (Data.Doctors, "DOCTOR"),
+            (Data.Username, "USERNAME"), (Data.Profession, "PROFESSION"), (Data.Department, "DEPARTMENT"), (Data.Hospital, "HOSPITAL"),
+            (Data.Orgainzations, "ORGANIZATION"), (Data.Street, "STREET"), (Data.City, "CITY"), (Data.State, "STATE"),
+            (Data.Zip, "ZIP"), (Data.LocationOther, "LOCATION-OTHER"), (Data.Age, "AGE"), (Data.Dates, "DATE"), 
+            (Data.Times, "TIME"), (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), 
+            (Data.URL, "URL"), (Data.IPAddr, "IPADDR"), 
+        };
+
+        foreach ((object Data, string Text) Item in PHI)
+        {
+            if (Equals(Item.Data.GetType(), typeof(List<RegexData>)))
             {
-                OutputText.Add($"{Filename}_IDNUM_{ID.StartIndex}_{ID.EndIndex}_{ID.Value}");
+                List<RegexData> ListofRegexData = (List<RegexData>)Item.Data;
+                foreach (RegexData item in ListofRegexData)
+                {
+                    if (!string.IsNullOrEmpty(item.Value))
+                    {
+                        OutputText.Add($"{Filename}_{Item.Text}_{item.StartIndex}_{item.EndIndex}_{item.Value}");
+                    }
+                }
+            }
+            else
+            {
+                RegexData ValueofRegexData = (RegexData)Item.Data;
+                if (!string.IsNullOrEmpty(ValueofRegexData.Value))
+                {
+                    OutputText.Add($"{Filename}_{Item.Text}_{ValueofRegexData.StartIndex}_{ValueofRegexData.EndIndex}_{ValueofRegexData.Value}");
+                }
             }
         }
-        if (!string.IsNullOrEmpty(item.MedicalRecord.Value))
-        {
-            OutputText.Add($"{Filename}_MEDICALRECORD_{item.MedicalRecord.StartIndex}_{item.MedicalRecord.EndIndex}_{item.MedicalRecord.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Patient.Value))
-        {
-            OutputText.Add($"{Filename}_PATIENT_{item.Patient.StartIndex}_{item.Patient.EndIndex}_{item.Patient.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Street.Value))
-        {
-            OutputText.Add($"{Filename}_STREET_{item.Street.StartIndex}_{item.Street.EndIndex}_{item.Street.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.City.Value))
-        {
-            OutputText.Add($"{Filename}_CITY_{item.City.StartIndex}_{item.City.EndIndex}_{item.City.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.State.Value))
-        {
-            OutputText.Add($"{Filename}_STATE_{item.State.StartIndex}_{item.State.EndIndex}_{item.State.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Zip.Value))
-        {
-            OutputText.Add($"{Filename}_ZIP_{item.Zip.StartIndex}_{item.Zip.EndIndex}_{item.Zip.Value}");
-        }
-        if (item.Dates.Any())
-        {
-            foreach (RegexData Date in item.Dates)
-            {
-                OutputText.Add($"{Filename}_DATE_{Date.StartIndex}_{Date.EndIndex}_{Date.Value}_{Utils.ConvertToISO8601(ConvertForm.Date, Date.Value)}");
-            }
-        }
-        if (item.Times.Any())
-        {
-            foreach (RegexData Time in item.Times)
-            {
-                OutputText.Add($"{Filename}_TIME_{Time.StartIndex}_{Time.EndIndex}_{Time.Value}_{Utils.ConvertToISO8601(ConvertForm.Time, Time.Value)}");
-            }
-        }
-        if (!string.IsNullOrEmpty(item.Department.Value))
-        {
-            OutputText.Add($"{Filename}_DEPARTMENT_{item.Department.StartIndex}_{item.Department.EndIndex}_{item.Department.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Hospital.Value))
-        {
-            OutputText.Add($"{Filename}_HOSPITAL_{item.Hospital.StartIndex}_{item.Hospital.EndIndex}_{item.Hospital.Value}");
-        }
-        if (item.Doctors.Any())
-        {
-            foreach (RegexData item3 in item.Doctors)
-            {
-                OutputText.Add($"{Filename}_DOCTOR_{item3.StartIndex}_{item3.EndIndex}_{item3.Value}");
-            }
-        }
-        if (!string.IsNullOrEmpty(item.Phone.Value))
-        {
-            OutputText.Add($"{Filename}_PHONE_{item.Phone.StartIndex}_{item.Phone.EndIndex}_{item.Phone.Value}");
-        }
-        if (item.Orgainzations.Any())
-        {
-            foreach (RegexData Org in item.Orgainzations)
-            {
-                OutputText.Add($"{Filename}_ORGANIZATION_{Org.StartIndex}_{Org.EndIndex}_{Org.Value}");
-            }
-        }
-        if (!string.IsNullOrEmpty(item.Age.Value))
-        {
-            OutputText.Add($"{Filename}_AGE_{item.Age.StartIndex}_{item.Age.EndIndex}_{item.Age.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.LocationOther.Value))
-        {
-            OutputText.Add($"{Filename}_LOCATION-OTHER_{item.LocationOther.StartIndex}_{item.LocationOther.EndIndex}_{item.LocationOther.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.URL.Value))
-        {
-            OutputText.Add($"{Filename}_URL_{item.URL.StartIndex}_{item.URL.EndIndex}_{item.URL.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.IPAddr.Value))
-        {
-            OutputText.Add($"{Filename}_IPADDRESS_{item.IPAddr.StartIndex}_{item.IPAddr.EndIndex}_{item.IPAddr.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Fax.Value))
-        {
-            OutputText.Add($"{Filename}_FAX_{item.Fax.StartIndex}_{item.Fax.EndIndex}_{item.Fax.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Username.Value))
-        {
-            OutputText.Add($"{Filename}_USERNAME_{item.Username.StartIndex}_{item.Username.EndIndex}_{item.Username.Value}");
-        }
-        if (!string.IsNullOrEmpty(item.Profession.Value))
-        {
-            OutputText.Add($"{Filename}_PROFESSION_{item.Profession.StartIndex}_{item.Profession.EndIndex}_{item.Profession.Value}");
-        }
-        string gens = string.Join("\n", OutputText).Replace("_", "\t");
-        Console.WriteLine(gens);
-        return gens;
+        string Text = string.Join(Environment.NewLine, OutputText).Replace("_", "\t");
+        Console.WriteLine(Text);
+        return Text;
     }
 }

@@ -25,7 +25,7 @@ internal class Utils
             case ConvertForm.Date:
                 {
                     //Spilt into 0: MM, 1: d, 2: yyyy
-                    string[] SpiltedDate = originalData.Contains("/")
+                    string[] SpiltedDate = originalData.Contains('/')
                                             ? originalData.Split("/")
                                             : originalData.Split(".");
                     //If there is only one digit in day, padding 0 in front of it
@@ -48,7 +48,7 @@ internal class Utils
                 }
             case ConvertForm.Time:
                 {
-                    string[] SpiltedTime = Array.Empty<string>();
+                    string[] SpiltedTime = [];
                     if (originalData.Contains("at"))
                     {
                         SpiltedTime = originalData.Split("at");
