@@ -56,6 +56,12 @@ internal partial class RegexPatterns
     #region PHI: Date
     [GeneratedRegex(@"(?:(\d{3,4})Hrs\s{1}on\s)?(\d{1,2}[/|\.]\d{1,2}[/|\.]\d{2,4})(?:\s{1}at\s{1}(\d{1,2}:\d{2}))?")]
     internal static partial Regex DateAndTime();
+
+    [GeneratedRegex(@"(?:((?:\d{1,3}|\w{3,}))\s?(?i)((?:(?:week|wk)|(?:year|yr)|month|day|time|(?:hour|hr)|(?:minute|min)|(?:second|sec))(?:s)?))")]
+    internal static partial Regex Duration();
+
+    [GeneratedRegex(@"(?i)(?:once|twice|thrice)")]
+    internal static partial Regex Set();
     #endregion
 
     #region PHI: Contract

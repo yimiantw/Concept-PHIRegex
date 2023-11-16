@@ -3,5 +3,7 @@
 internal enum ConvertForm
 {
     Date,
-    Time
+    Time,
+    Duration,
+    Set
 }

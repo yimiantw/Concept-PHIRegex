@@ -1,9 +1,35 @@
-﻿using System.Reflection;
+﻿using System.Collections.Frozen;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
 
 internal class Utils
 {
+    internal static FrozenDictionary<string, string> NumberDigit = new Dictionary<string, string>()
+        {
+            { "one", "1" },
+            { "two", "2" },
+            { "three", "3" },
+            { "four", "4" },
+            { "five", "5" },
+            { "six", "6" },
+            { "seven", "7" },
+            { "eight", "8" },
+            { "nine", "9" },
+            { "ten", "10" },
+            { "eleven", "11" },
+            { "twelve", "12" },
+            { "thirteen", "13" },
+            { "fourteen", "14" },
+            { "fifteen", "15" },
+            { "sixteen", "16" },
+            { "seventeen", "17" },
+            { "eighteen", "18" },
+            { "nineteen", "19" },
+            { "twenty", "20" },
+        }.ToFrozenDictionary();
+
     internal static string ReadIntroTexts()
     {
         Assembly CurrentASM = Assembly.GetExecutingAssembly();
@@ -18,7 +44,9 @@ internal class Utils
         return sr.ReadToEnd();
     }
 
-    internal static string ConvertToISO8601(ConvertForm Form, string originalData)
+    #region Convert Dates in PHI into ISO-8601 format
+    //TODO: Ugly implementation, fix it
+    internal static string GetNormalizedString(ConvertForm Form, string originalData)
     {
         switch (Form)
         {
@@ -44,7 +72,7 @@ internal class Utils
                     {
                         SpiltedDate[2] = $"20{SpiltedDate[2]}";
                     }
-                    return string.Format("{0}-{1}-{2}", SpiltedDate[2].Trim(), SpiltedDate[1].Trim(), SpiltedDate[0].Trim());
+                    return string.Format("_{0}-{1}-{2}", SpiltedDate[2].Trim(), SpiltedDate[1].Trim(), SpiltedDate[0].Trim());
                 }
             case ConvertForm.Time:
                 {
@@ -52,7 +80,7 @@ internal class Utils
                     if (originalData.Contains("at"))
                     {
                         SpiltedTime = originalData.Split("at");
-                        return $"{ConvertToISO8601(ConvertForm.Date, SpiltedTime[0])}T{SpiltedTime[1].Trim()}";
+                        return $"_{GetNormalizedString(ConvertForm.Date, SpiltedTime[0])}T{SpiltedTime[1].Trim()}";
                     }
                     else if (originalData.Contains("on"))
                     {
@@ -62,13 +90,50 @@ internal class Utils
                         {
                             TimeDigits = TimeDigits.Insert(0, "0");
                         }
-                        return $"{ConvertToISO8601(ConvertForm.Date, SpiltedTime[1])}T{TimeDigits.Insert(2, ":")}";
+                        return $"_{GetNormalizedString(ConvertForm.Date, SpiltedTime[1])}T{TimeDigits.Insert(2, ":")}";
                     }
                     else
                         throw new NotImplementedException();
+                }
+            case ConvertForm.Duration:
+                {
+                    Match MatchedItem = RegexPatterns.Duration().Match(originalData);
+                    if (MatchedItem.Success)
+                    {
+                        string DurationValue = int.TryParse(MatchedItem.Groups[1].Value, out _) 
+                            ? MatchedItem.Groups[1].Value 
+                            : NumberDigit.TryGetValue(MatchedItem.Groups[1].Value, out string? ValueFromDict) 
+                                ? ValueFromDict
+                                : string.Empty;
+                        string Designator = MatchedItem.Groups[2].Value.ToLower() switch
+                        {
+                            "year" or "years" or "yr" or "yrs" => "Y",
+                            "month" or "months" => "M",
+                            "week" or "weeks" or "wk" or "wks" => "W",
+                            "day" or "days" => "D",
+                            "time" or "times" => "T",
+                            "hour" or "hours" or "hr" or "hrs" => "H",
+                            "minute" or "minutes" or "min" or "mins" => "M",
+                            "second" or "seconds" or "sec" or "secs" => "S",
+                            _ => throw new NotImplementedException()
+                        };
+                        return $"_P{DurationValue}{Designator}";
+                    }
+                    throw new NotImplementedException();
+                }
+            case ConvertForm.Set:
+                {
+                    return $"_R{originalData.ToLower() switch
+                    {
+                        "once" => "1",
+                        "twice" => "2",
+                        "thrice" => "3",
+                        _ => throw new NotImplementedException()
+                    }}";
                 }
             default:
                 throw new NotImplementedException();
         }
     }
+    #endregion
 }

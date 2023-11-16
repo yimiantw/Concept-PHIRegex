@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -40,8 +41,8 @@ internal partial class Program
             Config.AppConfig.PreviousLocation = InputPath;
             Config.WriteConfig();
 #else
-            IEnumerable<string> FilesArray = new string[] { @"D:\Second_Phase_Text_Dataset\1093.txt" };
-            //IEnumerable<string> FilesArray = new string[] { @"D:\First_Phase_Text_Dataset\491.txt" };
+            IEnumerable<string> FilesArray = new[] { @"D:\Second_Phase_Text_Dataset\1702.txt" };
+            //IEnumerable<string> FilesArray = new[] { @"D:\First_Phase_Text_Dataset\491.txt" };
 #endif
             //Calcuate process time
             Stopwatch ProcessTime = new();
@@ -184,7 +185,7 @@ internal partial class Program
         Match Regex_Address = RegexPatterns.Address().Match(RawData);
         if (Regex_Address.Success)
         {
-            //Street or Location-Other
+            //Check it's Street or Location-Other by checking the first group in string
             switch (!string.IsNullOrEmpty(Regex_Address.Groups[1].Value))
             {
                 case true:
@@ -202,6 +203,7 @@ internal partial class Program
                     }
                 case false:
                     {
+                        //Location-Other
                         string LocationOther = Regex_Address.Groups[2].Value;
                         Data.LocationOther = new()
                         {
@@ -427,7 +429,7 @@ internal partial class Program
         }
         #endregion
 
-        #region Match: Profession
+        #region Match: Profession (TODO: find better pattern)
         //Match Regex_Profession = RegexPatterns.Profession().Match(RawData);
         //if (Regex_Profession.Success)
         //{
@@ -438,6 +440,41 @@ internal partial class Program
         //        EndIndex = RawData.IndexOf(Regex_Profession.Value) + Regex_Profession.Value.Length
         //    };
         //}
+        #endregion
+
+        #region Match: Duration
+        MatchCollection Regex_Duration = RegexPatterns.Duration().Matches(RawData);
+        if (Regex_Duration.Count > 0)
+        {
+            foreach (Match MatchDuration in Regex_Duration.Cast<Match>())
+            {
+                if (int.TryParse(MatchDuration.Groups[1].Value, out _) | Utils.NumberDigit.ContainsKey(MatchDuration.Groups[1].Value))
+                {
+                    Data.Durations.Add(new()
+                    {
+                        Value = MatchDuration.Value,
+                        StartIndex = MatchDuration.Index,
+                        EndIndex = MatchDuration.Index + MatchDuration.Value.Length,
+                    });
+                }
+            }
+        }
+        #endregion
+
+        #region Match: Set
+        MatchCollection Regex_Set = RegexPatterns.Set().Matches(RawData);
+        if (Regex_Set.Count > 0)
+        {
+            foreach (Match MatchSet in Regex_Set.Cast<Match>())
+            {
+                Data.Sets.Add(new()
+                {
+                    Value = MatchSet.Value,
+                    StartIndex = MatchSet.Index,
+                    EndIndex = MatchSet.Index + MatchSet.Value.Length,
+                });
+            }
+        }
         #endregion
 
         return Data;
@@ -452,7 +489,7 @@ internal partial class Program
             (Data.Username, "USERNAME"), (Data.Profession, "PROFESSION"), (Data.Department, "DEPARTMENT"), (Data.Hospital, "HOSPITAL"),
             (Data.Orgainzations, "ORGANIZATION"), (Data.Street, "STREET"), (Data.City, "CITY"), (Data.State, "STATE"),
             (Data.Zip, "ZIP"), (Data.LocationOther, "LOCATION-OTHER"), (Data.Age, "AGE"), (Data.Dates, "DATE"), 
-            (Data.Times, "TIME"), (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), 
+            (Data.Times, "TIME"), (Data.Durations, "DURATION"), (Data.Sets, "SET"), (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), 
             (Data.URL, "URL"), (Data.IPAddr, "IPADDR"), 
         };
 
@@ -465,7 +502,16 @@ internal partial class Program
                 {
                     if (!string.IsNullOrEmpty(item.Value))
                     {
-                        OutputText.Add($"{Filename}_{Item.Text}_{item.StartIndex}_{item.EndIndex}_{item.Value}");
+                        string NormalizedValue = Item.Text.Equals("DATE") | Item.Text.Equals("TIME") | Item.Text.Equals("DURATION") | Item.Text.Equals("SET") ? Utils.GetNormalizedString(Item.Text switch
+                        {
+                            "DATE" => ConvertForm.Date,
+                            "TIME" => ConvertForm.Time,
+                            "DURATION" => ConvertForm.Duration,
+                            "SET" => ConvertForm.Set,
+                            _ => throw new NotImplementedException()
+                        }, item.Value) : string.Empty;
+
+                        OutputText.Add($"{Filename}_{Item.Text}_{item.StartIndex}_{item.EndIndex}_{item.Value}{NormalizedValue}");
                     }
                 }
             }

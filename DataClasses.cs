@@ -42,8 +42,8 @@ internal class PHIData
     #region PHI: Date
     internal List<RegexData> Dates { get; set; } = [];
     internal List<RegexData> Times { get; set; } = [];
-    internal RegexData Duration { get; set; } = new();
-    internal RegexData Set { get; set; } = new();
+    internal List<RegexData> Durations { get; set; } = [];
+    internal List<RegexData> Sets { get; set; } = [];
     #endregion
 
     #region PHI: Contract
