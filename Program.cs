@@ -64,9 +64,8 @@ internal partial class Program
 
             //Display processed time
             ProcessTime.Stop();
-            Console.WriteLine(Environment.NewLine);
             Console.Title = "Done!";
-            Console.WriteLine("Total files: {0} | Process Time: {1}ms", FilesArray.Count(), ProcessTime.ElapsedMilliseconds);
+            Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Count(), ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
 
             // Write results into text file
             string SaveLocation = Path.Combine(!string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
