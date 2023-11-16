@@ -40,7 +40,17 @@ Fax: ```\d{2}-\d{4}-\d{4}```\
 Email: ```\w.+@\w.+\.\w+```\
 URL: ```([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6})\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*```\
 IPAddress (IPv4): ```\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}```
-    
+
+## Performance
+Tested with 1734 files where the data from first phase dataset and second phase dataset
+* Compiled w/ Native AOT (Binary size: 3.41MB)\
+```Total files: 1734 | Process Time: 2198ms | Memory Used: 35.793 MB```
+
+* Compiled w/o Native AOT (Binary size: 73.1 MB)\
+```Total files: 1734 | Process Time: 2760ms | Memory Used: 65.32 MB```
+
+Compiled w/ Native AOT provides 2143.6% smaller binary size, 20.3% lower processing time and 54.8% lower memory usage.
+
 ## Prerequisites
 
 Since this project is developed in .NET 8.0, you can use Visual Studio 2022 to build and debug 
@@ -53,7 +63,7 @@ OR, you can use editors with runtime installed
 * [VSCodium](https://vscodium.com/)
 * [.NET 8.0 SDK / Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
-You can run the project with following command if you choose second method:
+You can run the project with following commands if you choose second method:
 ```
 cd <project_folder>
 dotnet run 
