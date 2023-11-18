@@ -1,5 +1,4 @@
-﻿using System.Collections.Frozen;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -55,7 +54,9 @@ internal partial class Program
             List<string> opt = [];
             foreach (string item in FilesArray)
             {
-                string RawData = Utils.ReadRawData(item);
+                using StreamReader sr = new(item);
+                string RawData = sr.ReadToEnd();
+                sr.Close();
                 string Filename = Path.GetFileNameWithoutExtension(item);
                 PHIData ProcessedData = ProcessRegexFromRawData(RawData);
                 List_PHIData.Add(ProcessedData);
@@ -74,10 +75,10 @@ internal partial class Program
             StreamWriter sw = new(SaveLocation);
             sw.WriteLine(string.Join(Environment.NewLine, opt));
             sw.Close();
-            Console.WriteLine($@"The results are saved to D:\answer.txt, press Y key open the file or any key to close.");
+            Console.WriteLine("The results are saved to {0}, press Y key open the file or any key to close.", SaveLocation);
 
             //Ask user whether want to open the result file
-            if (Console.ReadKey().Key == ConsoleKey.Y)
+            if (Console.ReadKey().Key is ConsoleKey.Y)
             {
                 ProcessStartInfo info = new()
                 {

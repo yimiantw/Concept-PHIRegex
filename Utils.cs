@@ -38,12 +38,6 @@ internal class Utils
         return Reader.ReadToEnd();
     }
 
-    internal static string ReadRawData(string Filepath)
-    {
-        using StreamReader sr = new(Filepath);
-        return sr.ReadToEnd();
-    }
-
     #region Convert Dates in PHI into ISO-8601 format
     //TODO: Ugly implementation, fix it
     internal static string GetNormalizedString(ConvertForm Form, string originalData)
