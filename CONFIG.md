@@ -2,7 +2,7 @@
 This program generates a JSON-based config called ```config.json``` at launch at the first time.
 
 The default config shows as following:
-```
+```json
 {
   "PreviousLocation": "",
   "SaveLocation": "",
