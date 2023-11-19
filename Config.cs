@@ -9,6 +9,7 @@ public class ConfigData
     public string SaveLocation { get; set; } = string.Empty;
     public string SaveFilename { get; set; } = "answer.txt";
     public string EditorLocation { get; set; } = "notepad.exe";
+    public IEnumerable<string> ValidateFileLocations { get; set; } = [];
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
