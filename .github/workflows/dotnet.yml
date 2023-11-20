@@ -23,7 +23,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Publish
-      run: dotnet publish --no-restore -r win-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet publish --no-restore -p:RuntimeIdentifier=win-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
       
   build-linux:
 
@@ -38,7 +38,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Publish
-      run: dotnet publish --no-restore -r linux-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet publish --no-restore -p:RuntimeIdentifier=linux-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
       
   build-macos:
 
@@ -53,4 +53,4 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Publish
-      run: dotnet publish --no-restore -r osx-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet publish --no-restore -p:RuntimeIdentifier=osx-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
