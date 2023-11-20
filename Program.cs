@@ -58,7 +58,9 @@ internal partial class Program
                 string RawData = sr.ReadToEnd();
                 sr.Close();
                 string Filename = Path.GetFileNameWithoutExtension(item);
-                PHIData ProcessedData = ProcessRegexFromRawData(RawData);
+                PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled 
+                                            ? ProcessRegexWithCustomPattern(RawData)
+                                            : ProcessRegexFromRawData(RawData);
                 List_PHIData.Add(ProcessedData);
                 opt.Add(GenerateOutput(Filename, ProcessedData));
             }
@@ -100,7 +102,7 @@ internal partial class Program
     internal static string GetConsoleInput()
     {
         //Load intro texts here, not in the loop
-        string IntroTexts = Utils.ReadIntroTexts();
+        string IntroTexts = Utils.GetAssemblyResource("Concept-PHIRegex.welcome.txt");
         while (true)
         {
             if (!string.IsNullOrEmpty(Config.AppConfig.PreviousLocation))
@@ -473,6 +475,32 @@ internal partial class Program
                     StartIndex = MatchSet.Index,
                     EndIndex = MatchSet.Index + MatchSet.Value.Length,
                 });
+            }
+        }
+        #endregion
+
+        return Data;
+    }
+
+    internal static PHIData ProcessRegexWithCustomPattern(string RawData)
+    {
+        PHIData Data = new();
+
+        #region Match: ID
+        foreach (string Ptn_Number in Config.AppConfig.CustomRegex.Patterns.IDNumber)
+        {
+            MatchCollection Regex_ID = Regex.Matches(RawData, Ptn_Number);
+            if (Regex_ID.Count > 0)
+            {
+                foreach (Match MatchID in Regex_ID.Cast<Match>())
+                {
+                    Data.IDs.Add(new()
+                    {
+                        Value = MatchID.Value,
+                        StartIndex = MatchID.Index,
+                        EndIndex = MatchID.Index + MatchID.Length,
+                    });
+                }
             }
         }
         #endregion

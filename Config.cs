@@ -5,11 +5,46 @@ namespace ConceptPHIRegex;
 
 public class ConfigData
 {
+    public class CustomRegexConfigClass
+    {
+        public class CustomPatternsClass
+        {
+            public IEnumerable<string> IDNumber { get; set; } = [];
+            public IEnumerable<string> MedicalRecord { get; set; } = [];
+            public IEnumerable<string> PatientName { get; set; } = [];
+            public IEnumerable<string> Doctor { get; set; } = [];
+            public IEnumerable<string> Username { get; set; } = [];
+            public IEnumerable<string> Profession { get; set; } = [];
+            public IEnumerable<string> Department { get; set; } = [];
+            public IEnumerable<string> Hospital { get; set; } = [];
+            public IEnumerable<string> Organization { get; set; } = [];
+            public IEnumerable<string> Street { get; set; } = [];
+            public IEnumerable<string> City { get; set; } = [];
+            public IEnumerable<string> State { get; set; } = [];
+            public IEnumerable<string> Zip { get; set; } = [];
+            public IEnumerable<string> LocationOther { get; set; } = [];
+            public IEnumerable<string> Age { get; set; } = [];
+            public IEnumerable<string> Date { get; set; } = [];
+            public IEnumerable<string> Time { get; set; } = [];
+            public IEnumerable<string> Duration { get; set; } = [];
+            public IEnumerable<string> Set { get; set; } = [];
+            public IEnumerable<string> Phone { get; set; } = [];
+            public IEnumerable<string> Fax { get; set; } = [];
+            public IEnumerable<string> Email { get; set; } = [];
+            public IEnumerable<string> URL { get; set; } = [];
+            public IEnumerable<string> IPAddress { get; set; } = [];
+        }
+
+        public bool Enabled { get; set; } = false;
+        public CustomPatternsClass Patterns { get; set; } = new();
+    }
+
     public string PreviousLocation { get; set; } = string.Empty;
     public string SaveLocation { get; set; } = string.Empty;
     public string SaveFilename { get; set; } = "answer.txt";
     public string EditorLocation { get; set; } = "notepad.exe";
     public IEnumerable<string> ValidateFileLocations { get; set; } = [];
+    public CustomRegexConfigClass CustomRegex { get; set; } = new();
 }
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
