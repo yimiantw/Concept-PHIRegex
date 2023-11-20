@@ -20,6 +20,8 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
     - name: Publish
       run: dotnet publish --no-restore -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
       
@@ -33,6 +35,8 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
     - name: Publish
       run: dotnet publish --no-restore -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
       
@@ -46,5 +50,7 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
     - name: Publish
       run: dotnet publish --no-restore -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
