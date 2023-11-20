@@ -1,5 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -30,10 +31,11 @@ internal class Utils
             { "twenty", "20" },
         }.ToFrozenDictionary();
 
-    internal static string ReadIntroTexts()
+
+    internal static string GetAssemblyResource(string ResourceName)
     {
         Assembly CurrentASM = Assembly.GetExecutingAssembly();
-        using Stream? stream = CurrentASM.GetManifestResourceStream("Concept-PHIRegex.welcome.txt") ?? throw new FileNotFoundException();
+        using Stream? stream = CurrentASM.GetManifestResourceStream(ResourceName) ?? throw new FileNotFoundException();
         using StreamReader Reader = new(stream);
         return Reader.ReadToEnd();
     }
