@@ -41,7 +41,16 @@ internal partial class Program
             Config.WriteConfig();
 #else
             IEnumerable<string> FilesArray = new[] { @"D:\Second_Phase_Text_Dataset\1702.txt" };
-            //IEnumerable<string> FilesArray = new[] { @"D:\First_Phase_Text_Dataset\491.txt" };
+            foreach (string FilePath in FilesArray)
+            {
+                if (!File.Exists(FilePath))
+                {
+                    Console.WriteLine("File: {0} is not exist, please check the \"FilesArray\" variable in the source code", FilePath);
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+            }
 #endif
             //Calcuate process time
             Stopwatch ProcessTime = new();
@@ -319,7 +328,7 @@ internal partial class Program
 
         #region Match: Phone
         Match Regex_Phone = RegexPatterns.Phone().Match(RawData);
-        if (Regex_Address.Success)
+        if (Regex_Phone.Success)
         {
             Data.Phone = new()
             {
@@ -486,23 +495,63 @@ internal partial class Program
     {
         PHIData Data = new();
 
-        #region Match: ID
-        foreach (string Ptn_Number in Config.AppConfig.CustomRegex.Patterns.IDNumber)
+        //Display messages indicate now in custom regex mode
+        Console.WriteLine("\n############################################################");
+        Console.WriteLine("Custom regex mode is enabled.");
+        Console.WriteLine("The performance is based on the complexity of the pattern.");
+        Console.WriteLine("############################################################\n");
+
+        #region Match: ID D
+        (IEnumerable<string> Patterns, object PHIData)[] TupleArray =
+        [
+            (Config.AppConfig.CustomRegex.Patterns.IDNumber, Data.IDs), (Config.AppConfig.CustomRegex.Patterns.MedicalRecord, Data.MedicalRecord),
+            (Config.AppConfig.CustomRegex.Patterns.PatientName, Data.Patient), (Config.AppConfig.CustomRegex.Patterns.Doctor, Data.Doctors),
+            (Config.AppConfig.CustomRegex.Patterns.Username, Data.IDs), (Config.AppConfig.CustomRegex.Patterns.Profession, Data.Profession),
+            (Config.AppConfig.CustomRegex.Patterns.Department, Data.Department), (Config.AppConfig.CustomRegex.Patterns.Hospital, Data.Hospital),
+            (Config.AppConfig.CustomRegex.Patterns.Organization, Data.Orgainzations), (Config.AppConfig.CustomRegex.Patterns.Street, Data.Street),
+            (Config.AppConfig.CustomRegex.Patterns.City, Data.City), (Config.AppConfig.CustomRegex.Patterns.State, Data.State),
+            (Config.AppConfig.CustomRegex.Patterns.Zip, Data.Zip), (Config.AppConfig.CustomRegex.Patterns.LocationOther, Data.LocationOther),
+            (Config.AppConfig.CustomRegex.Patterns.Age, Data.Age), (Config.AppConfig.CustomRegex.Patterns.Date, Data.Dates),
+            (Config.AppConfig.CustomRegex.Patterns.Time, Data.Times), (Config.AppConfig.CustomRegex.Patterns.Duration, Data.Durations),
+            (Config.AppConfig.CustomRegex.Patterns.Set, Data.Sets), (Config.AppConfig.CustomRegex.Patterns.Phone, Data.Phone),
+            (Config.AppConfig.CustomRegex.Patterns.Fax, Data.Fax), (Config.AppConfig.CustomRegex.Patterns.Email, Data.Email),
+            (Config.AppConfig.CustomRegex.Patterns.URL, Data.URL), (Config.AppConfig.CustomRegex.Patterns.IPAddress, Data.IPAddr)
+        ];
+
+        foreach ((IEnumerable<string> Patterns, object Data) DataTuple in TupleArray)
         {
-            MatchCollection Regex_ID = Regex.Matches(RawData, Ptn_Number);
-            if (Regex_ID.Count > 0)
+            foreach (string Pattern in DataTuple.Patterns)
             {
-                foreach (Match MatchID in Regex_ID.Cast<Match>())
+                MatchCollection RegexCollection = Regex.Matches(RawData, Pattern);
+                if (RegexCollection.Count > 0)
                 {
-                    Data.IDs.Add(new()
+                    foreach (Match MatchID in RegexCollection.Cast<Match>())
                     {
-                        Value = MatchID.Value,
-                        StartIndex = MatchID.Index,
-                        EndIndex = MatchID.Index + MatchID.Length,
-                    });
+                        if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
+                        {
+                            List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
+                            JustData?.Add(new()
+                            {
+                                    Value = MatchID.Value,
+                                    StartIndex = MatchID.Index,
+                                    EndIndex = MatchID.Index + MatchID.Length,
+                            });
+                        }
+                        else
+                        {
+                            RegexData? JustData = DataTuple.Data as RegexData;
+                            if (JustData is not null)
+                            {
+                                JustData.Value = MatchID.Value;
+                                JustData.StartIndex = MatchID.Index;
+                                JustData.EndIndex = MatchID.Index + MatchID.Length;
+                            }
+                        }
+                    }
                 }
             }
         }
+
         #endregion
 
         return Data;

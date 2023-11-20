@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ConceptPHIRegex;
@@ -42,7 +43,7 @@ public class ConfigData
     public string PreviousLocation { get; set; } = string.Empty;
     public string SaveLocation { get; set; } = string.Empty;
     public string SaveFilename { get; set; } = "answer.txt";
-    public string EditorLocation { get; set; } = "notepad.exe";
+    public string EditorLocation { get; set; } = Config.GetEditorByPlatform();
     public IEnumerable<string> ValidateFileLocations { get; set; } = [];
     public CustomRegexConfigClass CustomRegex { get; set; } = new();
 }
@@ -78,5 +79,20 @@ internal class Config
         using StreamWriter ConfigWriter = new("config.json");
         ConfigWriter.WriteLine(JsonSerializer.Serialize(AppConfig, SourceGenerationContext.Default.ConfigData));
         ConfigWriter.Close();
+    }
+
+    internal static string GetEditorByPlatform()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return "notepad.exe";
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return "/Applications/Visual Studio Code.app/Contents/Resources/app/bin";
+        }
+
+        throw new NotImplementedException("The platform is unsupported");
     }
 }

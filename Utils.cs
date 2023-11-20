@@ -1,6 +1,5 @@
 ﻿using System.Collections.Frozen;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
