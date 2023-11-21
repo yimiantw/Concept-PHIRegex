@@ -93,6 +93,11 @@ internal class Config
             return "/Applications/Visual Studio Code.app/Contents/Resources/app/bin";
         }
 
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return "vi";
+        }
+
         throw new NotImplementedException("The platform is unsupported");
     }
 }
