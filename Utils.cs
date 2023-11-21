@@ -43,91 +43,98 @@ internal class Utils
     //TODO: Ugly implementation, fix it
     internal static string GetNormalizedString(ConvertForm Form, string originalData)
     {
-        switch (Form)
+        try
         {
-            case ConvertForm.Date:
-                {
-                    //Spilt into 0: MM, 1: d, 2: yyyy
-                    string[] SpiltedDate = originalData.Contains('/')
-                                            ? originalData.Split("/")
-                                            : originalData.Split(".");
-                    //If there is only one digit in day, padding 0 in front of it
-                    if (SpiltedDate[0].Length < 2)
+            switch (Form)
+            {
+                case ConvertForm.Date:
                     {
-                        SpiltedDate[0] = $"0{SpiltedDate[0]}";
-                    }
-                    //If there is only one digit in month, padding 0 in front of it
-                    if (SpiltedDate[1].Length < 2)
-                    {
-                        SpiltedDate[1] = $"0{SpiltedDate[1]}";
-                    }
-                    //If there is only two digit in year, padding 20 in front of it
-                    //The answer shows they padded 20 instead of 19 in front the year, weird
-                    if (SpiltedDate[2].Length < 4)
-                    {
-                        SpiltedDate[2] = $"20{SpiltedDate[2]}";
-                    }
-                    return string.Format("_{0}-{1}-{2}", SpiltedDate[2].Trim(), SpiltedDate[1].Trim(), SpiltedDate[0].Trim());
-                }
-            case ConvertForm.Time:
-                {
-                    string[] SpiltedTime = [];
-                    if (originalData.Contains("at"))
-                    {
-                        SpiltedTime = originalData.Split("at");
-                        return $"_{GetNormalizedString(ConvertForm.Date, SpiltedTime[0])}T{SpiltedTime[1].Trim()}";
-                    }
-                    else if (originalData.Contains("on"))
-                    {
-                        SpiltedTime = originalData.Split("on");
-                        string TimeDigits = SpiltedTime[0].Replace("Hrs", string.Empty).Trim();
-                        if (TimeDigits.Length < 4)
+                        //Spilt into 0: MM, 1: d, 2: yyyy
+                        string[] SpiltedDate = originalData.Contains('/')
+                                                ? originalData.Split("/")
+                                                : originalData.Split(".");
+                        //If there is only one digit in day, padding 0 in front of it
+                        if (SpiltedDate[0].Length < 2)
                         {
-                            TimeDigits = TimeDigits.Insert(0, "0");
+                            SpiltedDate[0] = $"0{SpiltedDate[0]}";
                         }
-                        return $"_{GetNormalizedString(ConvertForm.Date, SpiltedTime[1])}T{TimeDigits.Insert(2, ":")}";
-                    }
-                    else
-                        throw new NotImplementedException();
-                }
-            case ConvertForm.Duration:
-                {
-                    Match MatchedItem = RegexPatterns.Duration().Match(originalData);
-                    if (MatchedItem.Success)
-                    {
-                        string DurationValue = int.TryParse(MatchedItem.Groups[1].Value, out _) 
-                            ? MatchedItem.Groups[1].Value 
-                            : NumberDigit.TryGetValue(MatchedItem.Groups[1].Value, out string? ValueFromDict) 
-                                ? ValueFromDict
-                                : string.Empty;
-                        string Designator = MatchedItem.Groups[2].Value.ToLower() switch
+                        //If there is only one digit in month, padding 0 in front of it
+                        if (SpiltedDate[1].Length < 2)
                         {
-                            "year" or "years" or "yr" or "yrs" => "Y",
-                            "month" or "months" => "M",
-                            "week" or "weeks" or "wk" or "wks" => "W",
-                            "day" or "days" => "D",
-                            "time" or "times" => "T",
-                            "hour" or "hours" or "hr" or "hrs" => "H",
-                            "minute" or "minutes" or "min" or "mins" => "M",
-                            "second" or "seconds" or "sec" or "secs" => "S",
-                            _ => throw new NotImplementedException()
-                        };
-                        return $"_P{DurationValue}{Designator}";
+                            SpiltedDate[1] = $"0{SpiltedDate[1]}";
+                        }
+                        //If there is only two digit in year, padding 20 in front of it
+                        //The answer shows they padded 20 instead of 19 in front the year, weird
+                        if (SpiltedDate[2].Length < 4)
+                        {
+                            SpiltedDate[2] = $"20{SpiltedDate[2]}";
+                        }
+                        return string.Format("_{0}-{1}-{2}", SpiltedDate[2].Trim(), SpiltedDate[1].Trim(), SpiltedDate[0].Trim());
                     }
-                    throw new NotImplementedException();
-                }
-            case ConvertForm.Set:
-                {
-                    return $"_R{originalData.ToLower() switch
+                case ConvertForm.Time:
                     {
-                        "once" => "1",
-                        "twice" => "2",
-                        "thrice" => "3",
-                        _ => throw new NotImplementedException()
-                    }}";
-                }
-            default:
-                throw new NotImplementedException();
+                        string[] SpiltedTime = [];
+                        if (originalData.Contains("at"))
+                        {
+                            SpiltedTime = originalData.Split("at");
+                            return $"_{GetNormalizedString(ConvertForm.Date, SpiltedTime[0])}T{SpiltedTime[1].Trim()}";
+                        }
+                        else if (originalData.Contains("on"))
+                        {
+                            SpiltedTime = originalData.Split("on");
+                            string TimeDigits = SpiltedTime[0].Replace("Hrs", string.Empty).Trim();
+                            if (TimeDigits.Length < 4)
+                            {
+                                TimeDigits = TimeDigits.Insert(0, "0");
+                            }
+                            return $"_{GetNormalizedString(ConvertForm.Date, SpiltedTime[1])}T{TimeDigits.Insert(2, ":")}";
+                        }
+                        else
+                            throw new NotImplementedException();
+                    }
+                case ConvertForm.Duration:
+                    {
+                        Match MatchedItem = RegexPatterns.Duration().Match(originalData);
+                        if (MatchedItem.Success)
+                        {
+                            string DurationValue = int.TryParse(MatchedItem.Groups[1].Value, out _)
+                                ? MatchedItem.Groups[1].Value
+                                : NumberDigit.TryGetValue(MatchedItem.Groups[1].Value, out string? ValueFromDict)
+                                    ? ValueFromDict
+                                    : string.Empty;
+                            string Designator = MatchedItem.Groups[2].Value.ToLower() switch
+                            {
+                                "year" or "years" or "yr" or "yrs" => "Y",
+                                "month" or "months" => "M",
+                                "week" or "weeks" or "wk" or "wks" => "W",
+                                "day" or "days" => "D",
+                                "time" or "times" => "T",
+                                "hour" or "hours" or "hr" or "hrs" => "H",
+                                "minute" or "minutes" or "min" or "mins" => "M",
+                                "second" or "seconds" or "sec" or "secs" => "S",
+                                _ => throw new NotImplementedException()
+                            };
+                            return $"_P{DurationValue}{Designator}";
+                        }
+                        throw new NotImplementedException();
+                    }
+                case ConvertForm.Set:
+                    {
+                        return $"_R{originalData.ToLower() switch
+                        {
+                            "once" => "1",
+                            "twice" => "2",
+                            "thrice" => "3",
+                            _ => throw new NotImplementedException()
+                        }}";
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+        catch (Exception)
+        {
+            return "_ERROR: Invalid format to normalize :(";
         }
     }
     #endregion
