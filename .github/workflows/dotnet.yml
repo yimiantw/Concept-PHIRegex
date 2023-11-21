@@ -26,7 +26,7 @@ jobs:
       run: dotnet publish --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
     - uses: actions/upload-artifact@v3
       with:
-        name: Windows
+        name: Windows (x64)
         path: D:\a\Concept-PHIRegex\Concept-PHIRegex\bin\Release\net8.0\win-x64\publish\Concept-PHIRegex.exe
 
   build-linux:
@@ -45,7 +45,7 @@ jobs:
       run: dotnet publish --no-restore -p:RuntimeIdentifier=linux-x64 -p:TargetFramework=net8.0 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
     - uses: actions/upload-artifact@v3
       with:
-        name: Linux
+        name: Linux (x64)
         path: /home/runner/work/Concept-PHIRegex/Concept-PHIRegex/bin/Release/net8.0/linux-x64/publish/Concept-PHIRegex
       
   build-macos:
@@ -64,5 +64,5 @@ jobs:
       run: dotnet publish --no-restore -p:TargetFramework=net8.0 -p:RuntimeIdentifier=osx-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
     - uses: actions/upload-artifact@v3
       with:
-        name: MacOS
+        name: MacOS (x64)
         path: /Users/runner/work/Concept-PHIRegex/Concept-PHIRegex/bin/Release/net8.0/osx-x64/publish/Concept-PHIRegex
