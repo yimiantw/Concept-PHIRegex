@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -22,6 +23,7 @@ public class ConfigData
             public IEnumerable<string> Street { get; set; } = [];
             public IEnumerable<string> City { get; set; } = [];
             public IEnumerable<string> State { get; set; } = [];
+            public IEnumerable<string> Country { get; set; } = [];
             public IEnumerable<string> Zip { get; set; } = [];
             public IEnumerable<string> LocationOther { get; set; } = [];
             public IEnumerable<string> Age { get; set; } = [];
