@@ -5,6 +5,7 @@ namespace ConceptPHIRegex;
 
 internal partial class Program
 {
+    #region Main Entry
     static void Main()
     {
         //Read config
@@ -67,7 +68,7 @@ internal partial class Program
                 string RawData = sr.ReadToEnd();
                 sr.Close();
                 string Filename = Path.GetFileNameWithoutExtension(item);
-                PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled 
+                PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled
                                             ? ProcessRegexWithCustomPattern(RawData)
                                             : ProcessRegexFromRawData(RawData);
                 List_PHIData.Add(ProcessedData);
@@ -95,10 +96,21 @@ internal partial class Program
                 {
                     FileName = Config.AppConfig.EditorLocation,
                     Arguments = !string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
-                                ? SaveLocation
-                                : AppContext.BaseDirectory + Config.AppConfig.SaveFilename,
+                    ? SaveLocation
+                    : AppContext.BaseDirectory + Config.AppConfig.SaveFilename,
                 };
-                Process.Start(info);
+                try
+                {
+                    Process.Start(info);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unable to open editor\nFile:{0}\nArguments:{1}", info.FileName, info.Arguments);
+                    Console.WriteLine("Exception: {0}", ex.Message);
+                    Console.WriteLine("\nPress any key to exit...");
+                    Environment.Exit(0);
+                }
+
             };
         }
         catch (Exception ex)
@@ -107,7 +119,9 @@ internal partial class Program
             Console.ReadKey();
         }
     }
+    #endregion
 
+    #region Fetch input from console
     internal static string GetConsoleInput()
     {
         //Load intro texts here, not in the loop
@@ -145,7 +159,9 @@ internal partial class Program
             }
         }
     }
+    #endregion
 
+    #region ProcessRegexFromRawData
     internal static PHIData ProcessRegexFromRawData(string RawData)
     {
         PHIData Data = new();
@@ -490,7 +506,9 @@ internal partial class Program
 
         return Data;
     }
+    #endregion
 
+    #region ProcessRegexWithCustomPattern
     internal static PHIData ProcessRegexWithCustomPattern(string RawData)
     {
         PHIData Data = new();
@@ -501,21 +519,34 @@ internal partial class Program
         Console.WriteLine("The performance is based on the complexity of the pattern.");
         Console.WriteLine("############################################################\n");
 
-        #region Match: ID D
+        #region Get matches
         (IEnumerable<string> Patterns, object PHIData)[] TupleArray =
         [
-            (Config.AppConfig.CustomRegex.Patterns.IDNumber, Data.IDs), (Config.AppConfig.CustomRegex.Patterns.MedicalRecord, Data.MedicalRecord),
-            (Config.AppConfig.CustomRegex.Patterns.PatientName, Data.Patient), (Config.AppConfig.CustomRegex.Patterns.Doctor, Data.Doctors),
-            (Config.AppConfig.CustomRegex.Patterns.Username, Data.IDs), (Config.AppConfig.CustomRegex.Patterns.Profession, Data.Profession),
-            (Config.AppConfig.CustomRegex.Patterns.Department, Data.Department), (Config.AppConfig.CustomRegex.Patterns.Hospital, Data.Hospital),
-            (Config.AppConfig.CustomRegex.Patterns.Organization, Data.Orgainzations), (Config.AppConfig.CustomRegex.Patterns.Street, Data.Street),
-            (Config.AppConfig.CustomRegex.Patterns.City, Data.City), (Config.AppConfig.CustomRegex.Patterns.State, Data.State),
-            (Config.AppConfig.CustomRegex.Patterns.Zip, Data.Zip), (Config.AppConfig.CustomRegex.Patterns.LocationOther, Data.LocationOther),
-            (Config.AppConfig.CustomRegex.Patterns.Age, Data.Age), (Config.AppConfig.CustomRegex.Patterns.Date, Data.Dates),
-            (Config.AppConfig.CustomRegex.Patterns.Time, Data.Times), (Config.AppConfig.CustomRegex.Patterns.Duration, Data.Durations),
-            (Config.AppConfig.CustomRegex.Patterns.Set, Data.Sets), (Config.AppConfig.CustomRegex.Patterns.Phone, Data.Phone),
-            (Config.AppConfig.CustomRegex.Patterns.Fax, Data.Fax), (Config.AppConfig.CustomRegex.Patterns.Email, Data.Email),
-            (Config.AppConfig.CustomRegex.Patterns.URL, Data.URL), (Config.AppConfig.CustomRegex.Patterns.IPAddress, Data.IPAddr)
+            (Config.AppConfig.CustomRegex.Patterns.IDNumber, Data.IDs),
+            (Config.AppConfig.CustomRegex.Patterns.MedicalRecord, Data.MedicalRecord),
+            (Config.AppConfig.CustomRegex.Patterns.PatientName, Data.Patient),
+            (Config.AppConfig.CustomRegex.Patterns.Doctor, Data.Doctors),
+            (Config.AppConfig.CustomRegex.Patterns.Username, Data.IDs),
+            (Config.AppConfig.CustomRegex.Patterns.Profession, Data.Profession),
+            (Config.AppConfig.CustomRegex.Patterns.Department, Data.Department),
+            (Config.AppConfig.CustomRegex.Patterns.Hospital, Data.Hospital),
+            (Config.AppConfig.CustomRegex.Patterns.Organization, Data.Orgainzations),
+            (Config.AppConfig.CustomRegex.Patterns.Street, Data.Street),
+            (Config.AppConfig.CustomRegex.Patterns.City, Data.City),
+            (Config.AppConfig.CustomRegex.Patterns.State, Data.State),
+            (Config.AppConfig.CustomRegex.Patterns.Country, Data.Country),
+            (Config.AppConfig.CustomRegex.Patterns.Zip, Data.Zip),
+            (Config.AppConfig.CustomRegex.Patterns.LocationOther, Data.LocationOther),
+            (Config.AppConfig.CustomRegex.Patterns.Age, Data.Age),
+            (Config.AppConfig.CustomRegex.Patterns.Date, Data.Dates),
+            (Config.AppConfig.CustomRegex.Patterns.Time, Data.Times),
+            (Config.AppConfig.CustomRegex.Patterns.Duration, Data.Durations),
+            (Config.AppConfig.CustomRegex.Patterns.Set, Data.Sets),
+            (Config.AppConfig.CustomRegex.Patterns.Phone, Data.Phone),
+            (Config.AppConfig.CustomRegex.Patterns.Fax, Data.Fax),
+            (Config.AppConfig.CustomRegex.Patterns.Email, Data.Email),
+            (Config.AppConfig.CustomRegex.Patterns.URL, Data.URL),
+            (Config.AppConfig.CustomRegex.Patterns.IPAddress, Data.IPAddr)
         ];
 
         foreach ((IEnumerable<string> Patterns, object Data) DataTuple in TupleArray)
@@ -532,9 +563,9 @@ internal partial class Program
                             List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
                             JustData?.Add(new()
                             {
-                                    Value = MatchID.Value,
-                                    StartIndex = MatchID.Index,
-                                    EndIndex = MatchID.Index + MatchID.Length,
+                                Value = MatchID.Value,
+                                StartIndex = MatchID.Index,
+                                EndIndex = MatchID.Index + MatchID.Length,
                             });
                         }
                         else
@@ -556,7 +587,9 @@ internal partial class Program
 
         return Data;
     }
+    #endregion
 
+    #region GenerateOutput
     internal static string GenerateOutput(string Filename, PHIData Data)
     {
         List<string> OutputText = [];
@@ -565,9 +598,10 @@ internal partial class Program
             (Data.IDs, "IDNUM"), (Data.MedicalRecord, "MEDICALRECORD"), (Data.Patient, "PATIENT"), (Data.Doctors, "DOCTOR"),
             (Data.Username, "USERNAME"), (Data.Profession, "PROFESSION"), (Data.Department, "DEPARTMENT"), (Data.Hospital, "HOSPITAL"),
             (Data.Orgainzations, "ORGANIZATION"), (Data.Street, "STREET"), (Data.City, "CITY"), (Data.State, "STATE"),
-            (Data.Zip, "ZIP"), (Data.LocationOther, "LOCATION-OTHER"), (Data.Age, "AGE"), (Data.Dates, "DATE"), 
-            (Data.Times, "TIME"), (Data.Durations, "DURATION"), (Data.Sets, "SET"), (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), 
-            (Data.URL, "URL"), (Data.IPAddr, "IPADDR"), 
+            (Data.Country, "COUNTRY"), (Data.Zip, "ZIP"), (Data.LocationOther, "LOCATION-OTHER"), (Data.Age, "AGE"), 
+            (Data.Dates, "DATE"), (Data.Times, "TIME"), (Data.Durations, "DURATION"), (Data.Sets, "SET"), 
+            (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), (Data.URL, "URL"), 
+            (Data.IPAddr, "IPADDR"),
         };
 
         foreach ((object Data, string Text) Item in PHI)
@@ -605,4 +639,6 @@ internal partial class Program
         Console.WriteLine(Text);
         return Text;
     }
+    #endregion
+
 }
