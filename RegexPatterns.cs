@@ -43,6 +43,13 @@ internal partial class RegexPatterns
 
     [GeneratedRegex(@"^(?:(\w+(?:\s?\w)+)|((?:PO|P.O.)\s(?:BOX)\s\d{2,4}))\n(\w+(?:\s?\w)+)\s{2}((?:[A-Za-z]+\s){1,})\s{1,2}(\d{4})", RegexOptions.Multiline)]
     internal static partial Regex Address(); //Including Street, City, State, Zip, Location-Other
+
+    //Countries
+    [GeneratedRegex("Afghanistan|Albania|Algeria|Angola|Antigua and Barbuda|Argentina|Armenia|Australia|Austria|Azerbaijan|Bahamas, The|Bahrain|Bangladesh|Barbados|Belarus|Belgium|Belize|Benin|Bhutan|Bolivia|Bosnia and Herzegovina|Botswana|Brazil|Brunei Darussalam|Bulgaria|Burkina Faso|Burundi|Cambodia|Cameroon|Canada|Cape Verde|Central African Republic|Chad|Chile|China|Colombia|Comoros|Congo, Democratic Republic of the|Congo, Republic of|Costa Rica|Cote d’Ivoire|Croatia|Cyprus|Czech Republic|Denmark|Djibouti|Dominica|Dominica|Ecuador|Egypt|El Salvador|Equatorial Guinea|Eritrea|Estonia|Ethiopia|Fiji|Finland|France|Guinea|Gabon|Gambia, The|Georgia|Germany|Ghana|Greece|Grenada|Guatemala|Guinea|Guinea|Guyana|Guinea|Haiti|Honduras|Hong Kong SAR|Hungary|Iceland|India|Indonesia|Iran|Iraq|Ireland|Israel|Italy|Jamaica|Japan|Jordan|Kazakhstan|Kenya|Kiribati|Korea|Kosovo|Kuwait|Kyrgyz Republic|Lao P.D.R.|Latvia|Lebanon|Lesotho|Liberia|Libyan Arab Jamahiriya|Lithuania|Luxembourg|Macedonia, former Yugoslav Republic of|Madagascar|Malawi|Malaysia|Maldives|Mali|Malta|Marshall Islands|Mauritania|Mauritius|Mexico|Micronesia, Federated States of|Moldova|Mongolia|Montenegro|Morocco|Mozambique|Myanmar|Namibia|Nepal|Netherlands|New Zealand|Nicaragua|Niger|Niger|Norway|Oman|Pakistan|Palau|Panama|Papua New Guinea|Paraguay|Peru|Philippines|Poland|Portugal|Qatar|Romania|Russian Federation|Rwanda|Saint Kitts and Nevis|Saint Lucia|Saint Vincent and the Grenadines|Samoa|San Marino|Sao Tome and Principe|Saudi Arabia|Senegal|Serbia|Seychelles|Sierra Leone|Singapore|Slovak Republic|Slovenia|Solomon Islands|Somalia|South Africa|Spain|Sri Lanka|Sudan|Suriname|Swaziland|Sweden|Switzerland|Syria|Taiwan|Tajikistan|Tanzania|Thailand|Timor-Leste|Togo|Tonga|Trinidad and Tobago|Tunisia|Turkey|Turkmenistan|Tuvalu|Uganda|Ukraine|United Arab Emirates|United Kingdom|United States|Uruguay|Uzbekistan|Vanuatu|Venezuela|Vietnam|Yemen|Zambia|Zimbabwe")]
+    internal static partial Regex CountryFullnames();
+    
+    [GeneratedRegex("USA|AUS")]
+    internal static partial Regex CountryShortnames();
     #endregion
 
     #region PHI: Age
@@ -80,5 +87,8 @@ internal partial class RegexPatterns
 
     [GeneratedRegex(@"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")]
     internal static partial Regex IPv4Address();
+
+    [GeneratedRegex(@"^(\w+)\s(\w+)\s(\w+)\s(\w+)\s(\w+.*)", RegexOptions.Multiline)]
+    internal static partial Regex Answer();
     #endregion
 }
