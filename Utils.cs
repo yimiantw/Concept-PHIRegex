@@ -1,4 +1,5 @@
 ﻿using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -37,6 +38,26 @@ internal class Utils
         using Stream? stream = CurrentASM.GetManifestResourceStream(ResourceName) ?? throw new FileNotFoundException();
         using StreamReader Reader = new(stream);
         return Reader.ReadToEnd();
+    }
+
+    internal static void OpenEditor(string Filename)
+    {
+        ProcessStartInfo StartInfo = new()
+        {
+            FileName = Config.AppConfig.EditorLocation,
+            Arguments = Filename
+        };
+        try
+        {
+            Process.Start(StartInfo);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Unable to open editor\nFile:{0}\nArguments:{1}", StartInfo.FileName, StartInfo.Arguments);
+            Console.WriteLine("Exception: {0}", ex.Message);
+            Console.WriteLine("\nPress any key to exit...");
+            Environment.Exit(0);
+        }
     }
 
     #region Convert Dates in PHI into ISO-8601 format
