@@ -5,6 +5,8 @@ internal class RegexData
     internal string Value { get; set; } = string.Empty;
     internal int StartIndex { get; set; } = 0;
     internal int EndIndex { get; set; } = 0;
+    internal string Type { get; set; } = string.Empty;
+    internal string FromPattern { get; set; } = string.Empty;
 }
 
 internal class PHIData
@@ -31,7 +33,7 @@ internal class PHIData
     internal RegexData Street { get; set; } = new();
     internal RegexData City { get; set; } = new();
     internal RegexData State { get; set; } = new();
-    internal RegexData Country { get; set; } = new();
+    internal List<RegexData> Country { get; set; } = [];
     internal RegexData Zip { get; set; } = new();
     internal RegexData LocationOther { get; set; } = new();
     #endregion
