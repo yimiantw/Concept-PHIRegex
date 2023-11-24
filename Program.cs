@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -8,131 +9,146 @@ internal partial class Program
     #region Main Entry
     static void Main()
     {
-        //Read config
-        Config.ReadConfig();
-
-        try
+        while (true)
         {
+            //Read config
+            Config.ReadConfig();
+
+            try
+            {
 #if !DEBUG
-            string InputPath = GetConsoleInput();
-            IEnumerable<string> FilesArray = Enumerable.Empty<string>();
-            //Check whether the input is a directory or a file
-            if (File.GetAttributes(InputPath).HasFlag(FileAttributes.Directory))
-            {
-                //Enumerate all text (.txt) files
-                FilesArray = Directory.EnumerateFiles(InputPath, "*.txt", SearchOption.TopDirectoryOnly);
-
-                //Check whether there is any text file in the target directory
-                if (!FilesArray.Any())
+                string InputPath = GetConsoleInput();
+                string[] FilesArray = [];
+                //Check whether the input is a directory or a file
+                if (File.GetAttributes(InputPath).HasFlag(FileAttributes.Directory))
                 {
-                    Console.WriteLine($"Path: {InputPath}");
-                    Console.WriteLine("\nThere is no text files available in target directory, operation cancelled.");
-                    Console.WriteLine("Press any key to exit.");
-                    Console.ReadKey();
-                    Environment.Exit(0);
-                }
-            }
-            else
-            {
-                FilesArray = new string[] { InputPath };
-            }
+                    //Enumerate all text (.txt) files
+                    FilesArray = Directory.GetFiles(InputPath, "*.txt", SearchOption.TopDirectoryOnly);
 
-            //Save path to config
-            Config.AppConfig.PreviousLocation = InputPath;
+                    //Check whether there is any text file in the target directory
+                    if (FilesArray.Length == 0)
+                    {
+                        Console.WriteLine($"Path: {InputPath}");
+                        Console.WriteLine("\nThere is no text files available in target directory, operation cancelled.");
+                        Console.WriteLine("Press any key to exit.");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+                }
+                else
+                {
+                    FilesArray = [InputPath];
+                }
+
+                //Save path to config
+                Config.AppConfig.PreviousLocation = InputPath;
             Config.WriteConfig();
 #else
-            //IEnumerable<string> FilesArray = new[] { @"D:\Test\DataSets\Second_Phase\1092.txt" };
-            IEnumerable<string> FilesArray = Directory.EnumerateFiles(@"D:\Test\DataSets\Mixed", "*.txt", SearchOption.TopDirectoryOnly);
-            Config.AppConfig.ValidateFileLocations = new string[]
-            {
-                @"D:\Test\DataSets\first_answer.txt",
-                @"D:\Test\DataSets\second_answer.txt"
-            };
-            foreach (string FilePath in FilesArray)
-            {
-                if (!Path.Exists(FilePath))
+                string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Second_Phase", "*.txt", SearchOption.TopDirectoryOnly);
+                Config.AppConfig.ValidateFileLocations = new string[]
+                {
+                    @"D:\Test\DataSets\first_answer.txt",
+                    @"D:\Test\DataSets\second_answer.txt"
+                };
+
+                foreach (string FilePath in FilesArray.Where(x => !Path.Exists(x)))
                 {
                     Console.WriteLine("File: {0} is not exist, please check the \"FilesArray\" variable in the source code", FilePath);
                     Console.WriteLine("Press any key to exit...");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
-            }
 #endif
-            //Check validation files
-            if (Config.AppConfig.ValidateFileLocations.Any())
-            {
-                Console.WriteLine("{0} validation files detected, which are: {1}", 
-                                    Config.AppConfig.ValidateFileLocations.Count(), 
-                                    string.Join(',', Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x))));
-            }
+                //Check validation files
+                if (Config.AppConfig.ValidateFileLocations.Any())
+                {
+                    Console.WriteLine("{0} validation files detected, which are: {1}",
+                                        Config.AppConfig.ValidateFileLocations.Count(),
+                                        string.Join(',', Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x))));
+                }
 
-            //Calcuate process time
-            Stopwatch ProcessTime = new();
-            ProcessTime.Start();
-            Console.Title = "Processing data...";
-            Console.WriteLine("Processing data...Please don't close the window\n");
+                //Calcuate process time
+                Stopwatch ProcessTime = new();
+                ProcessTime.Start();
+                Console.Title = "Processing data...";
 
-            //Initialize data class
-            List<PHIData> List_PHIData = [];
-            List<string> opt = [];
-            foreach (string item in FilesArray)
-            {
-                using StreamReader sr = new(item);
-                string RawData = sr.ReadToEnd();
-                sr.Close();
-                string Filename = Path.GetFileNameWithoutExtension(item);
-                PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled
-                                            ? ProcessRegexWithCustomPattern(RawData)
-                                            : ProcessRegexFromRawData(RawData);
-                List_PHIData.Add(ProcessedData);
-                opt.Add(GenerateOutput(Filename, ProcessedData));
-            }
+                //Initialize data class
+                List<PHIData> List_PHIData = [];
+                List<string> opt = [];
 
-            //Display processed time
-            ProcessTime.Stop();
-            Console.Title = "Done!";
-            Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Count(), ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
+                for (int i = 0; i < FilesArray.Length; i++)
+                {
+                    Console.Clear();
+                    Console.WriteLine("Processing data...Please don't close the window");
+                    Console.WriteLine("Mode: {0}", Config.AppConfig.CustomRegex.Enabled ? "Custom Regex pattern from config" : "Regex from the program supplies");
+                    Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
 
-            // Write results into text file
-            string SaveLocation = !string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
-                                    ? Config.AppConfig.SaveLocation
-                                    : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
-            StreamWriter sw = new(SaveLocation);
-            sw.WriteLine(string.Join(Environment.NewLine, opt));
-            sw.Close();
-            //Ask user whether want to open the result file
-            Console.WriteLine(Config.AppConfig.ValidateFileLocations.Any() 
-                                ? "The results are saved to {0}, \npress [Y] key open the file, [V] validate the result OR any key to close."
-                                : "The results are saved to {0}, \npress [Y] key open the file OR any key to close.", SaveLocation);
+                    using StreamReader sr = new(FilesArray[i]);
+                    string RawData = sr.ReadToEnd();
+                    sr.Close();
+                    string Filename = Path.GetFileNameWithoutExtension(FilesArray[i]);
+                    PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled
+                                                ? ProcessRegexWithCustomPattern(RawData)
+                                                : ProcessRegexFromRawData(RawData);
+                    List_PHIData.Add(ProcessedData);
+                    opt.Add(GenerateOutput(Filename, ProcessedData));
+                }
 
-            //Do things based on the key pressed
-            switch (Console.ReadKey().Key)
-            {
-                case ConsoleKey.Y:
-                    {
-                        Utils.OpenEditor(!string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
-                                            ? SaveLocation
-                                            : AppContext.BaseDirectory + Config.AppConfig.SaveFilename);
+                //Display processed time
+                Console.WriteLine("Done!");
+                ProcessTime.Stop();
+                Console.Title = "Done!";
+                Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Length, ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
+
+                // Write results into text file
+                string SaveLocation = !string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
+                                        ? Config.AppConfig.SaveLocation
+                                        : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
+                StreamWriter sw = new(SaveLocation);
+                sw.WriteLine(string.Join("\r\n", opt.Where(x => x.Length > 0).Select(x => x)));
+                sw.Close();
+                //Ask user whether want to open the result file
+                Console.WriteLine(Config.AppConfig.ValidateFileLocations.Any()
+                                    ? "The results are saved to {0}, \npress [Y] key open the file, [V] key validate the result, [M] key return to main menu OR any key to close."
+                                    : "The results are saved to {0}, \npress [Y] key open the file, [M] key return to main menu OR any key to close.", SaveLocation);
+
+                //Do things based on the key pressed
+                switch (Console.ReadKey().Key)
+                {
+                    case ConsoleKey.Y:
+                        {
+                            Utils.OpenEditor(!string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
+                                                ? SaveLocation
+                                                : AppContext.BaseDirectory + Config.AppConfig.SaveFilename);
+                            break;
+                        }
+                    case ConsoleKey.V:
+                        if (Config.AppConfig.ValidateFileLocations.Any())
+                        {
+                            ValidateResults(opt);
+                        }
                         break;
-                    }
-                case ConsoleKey.V:
-                    if (Config.AppConfig.ValidateFileLocations.Any())
-                    {
-                        ValidateResults(opt);
-                    }
-                    break;
-                default:
-                    Environment.Exit(0);
-                    break;
+                    case ConsoleKey.M:
+                        Console.Beep();
+                        break;
+                    default:
+                        Environment.Exit(0);
+                        break;
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("An error occured: \n{0}", ex.Message);
-            Console.WriteLine("Press any to exit the program throw the debug info into IDE.");
-            Console.ReadKey();
-            throw;
+#if !DEBUG
+            catch (Exception ex)
+            {
+
+                Console.WriteLine("An error occured: \n{0}", ex.Message);
+                Console.WriteLine("Press any to exit the program throw the debug info into IDE.");
+                Console.ReadKey();
+#else
+            catch (Exception)
+            {
+#endif
+                throw;
+            }
         }
     }
     #endregion
@@ -362,7 +378,8 @@ internal partial class Program
         #region Match: Doctor
         IEnumerable<Match> Regex_Doctors = RegexPatterns.DoctorVariantOne().Matches(RawData)
                                             .Concat(RegexPatterns.DoctorVariantTwo().Matches(RawData))
-                                            .Concat(RegexPatterns.DoctorVariantThree().Matches(RawData));
+                                            .Concat(RegexPatterns.DoctorVariantThree().Matches(RawData))
+                                            .Concat(RegexPatterns.DoctorVariantFour().Matches(RawData));
         if (Regex_Doctors.Any())
         {
             foreach (Match Doc in Regex_Doctors)
@@ -552,13 +569,8 @@ internal partial class Program
     {
         PHIData Data = new();
 
-        //Display messages indicate now in custom regex mode
-        Console.WriteLine("\n############################################################");
-        Console.WriteLine("Custom regex mode is enabled.");
-        Console.WriteLine("The performance is based on the complexity of the pattern.");
-        Console.WriteLine("############################################################\n");
-
-        #region Get matches
+        //<Pattern>@@<index>
+        #region TupleArray
         (IEnumerable<string> Patterns, object PHIData)[] TupleArray =
         [
             (Config.AppConfig.CustomRegex.Patterns.IDNumber, Data.IDs),
@@ -587,24 +599,33 @@ internal partial class Program
             (Config.AppConfig.CustomRegex.Patterns.URL, Data.URL),
             (Config.AppConfig.CustomRegex.Patterns.IPAddress, Data.IPAddr)
         ];
+        #endregion
 
         foreach ((IEnumerable<string> Patterns, object Data) DataTuple in TupleArray)
         {
             foreach (string Pattern in DataTuple.Patterns)
             {
+                string[] SplitedPattern = Pattern.Split("@@");
+                string RegexPattern = SplitedPattern[0];
+                string? Index = SplitedPattern.Length > 1 ? SplitedPattern[1] : string.Empty;
+
                 MatchCollection RegexCollection = Regex.Matches(RawData, Pattern);
                 if (RegexCollection.Count > 0)
                 {
                     foreach (Match MatchID in RegexCollection.Cast<Match>())
                     {
+                        string Value = !string.IsNullOrEmpty(Index) ? MatchID.Groups[Index].Value.Trim() : MatchID.Value.Trim();
+                        int StartIndex = RawData.IndexOf(Value);
+                        int EndIndex = RawData.IndexOf(Value) + Value.Length;
+
                         if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
                         {
                             List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
                             JustData?.Add(new()
                             {
-                                Value = MatchID.Value,
-                                StartIndex = MatchID.Index,
-                                EndIndex = MatchID.Index + MatchID.Length,
+                                Value = Value,
+                                StartIndex = StartIndex,
+                                EndIndex = EndIndex,
                             });
                         }
                         else
@@ -612,9 +633,9 @@ internal partial class Program
                             RegexData? JustData = DataTuple.Data as RegexData;
                             if (JustData is not null)
                             {
-                                JustData.Value = MatchID.Value;
-                                JustData.StartIndex = MatchID.Index;
-                                JustData.EndIndex = MatchID.Index + MatchID.Length;
+                                JustData.Value = Value;
+                                JustData.StartIndex = StartIndex;
+                                JustData.EndIndex = EndIndex;
                             }
                         }
                     }
@@ -622,7 +643,7 @@ internal partial class Program
             }
         }
 
-        #endregion
+
 
         return Data;
     }
@@ -674,8 +695,7 @@ internal partial class Program
                 }
             }
         }
-        string Text = string.Join(Environment.NewLine, OutputText).Replace("_", "\t");
-        //Console.WriteLine(Text);
+        string Text = string.Join(Environment.NewLine, OutputText.Where(x => x.Length > 0).Select(x => x)).Replace("_", "\t");
         return Text;
     }
     #endregion
@@ -683,19 +703,25 @@ internal partial class Program
     #region ValidateResults
     private static void ValidateResults(List<string> opt)
     {
+        Console.Title = "Validating data...";
+
         //Read all validation files
         List<string> LoadedValidationFiles = [];
-        foreach (string FilePath in Config.AppConfig.ValidateFileLocations)
+        foreach (string FilePath in Config.AppConfig.ValidateFileLocations.Where(Path.Exists))
         {
             using StreamReader sr = new(FilePath);
             LoadedValidationFiles.Add(sr.ReadToEnd());
             sr.Close();
         }
 
-        string[] ValidationSplited = string.Join('\n', LoadedValidationFiles).Split('\n').Where(x => !string.IsNullOrEmpty(x)).Select(x => x).ToArray();
-        string[] OutputSplited = string.Join('\n', opt).Split('\n').Where(x => !string.IsNullOrEmpty(x)).Select(x => x).ToArray();
-        List<string> MissingResults = [];
-        string currentfile = string.Empty;
+        //Initialize
+        string[] ValidationSplited = string.Join("\n", LoadedValidationFiles).Split("\n").Where(x => !string.IsNullOrEmpty(x)).Select(x => x).ToArray();
+        string[] OutputSplited = string.Join("\n", opt).Split("\n").Where(x => !string.IsNullOrEmpty(x)).Select(x => x).ToArray();
+        List<string> ValidatedList = []; //For all validated answers
+        List<string> MismatchList = []; //For all mismatched answers (from output)
+        List<string> MissingList = []; //For all missing answers (from answer)
+        List<string> ListToBeAnalyze = [.. OutputSplited]; //From OutputSplited, items left here will be analyzed further.
+
         for (int i = 0; i < ValidationSplited.Length; i++)
         {
             //Get filename
@@ -704,44 +730,123 @@ internal partial class Program
             //Display message
             Console.Clear();
             Console.WriteLine("Processing validation data... This may take a while...");
-            Console.WriteLine("Current file: {0}", FilenameInCurrentLine);
-            
-            //Add to missing list when there is no same data
-            if (!OutputSplited.Contains(ValidationSplited[i]))
+            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", FilenameInCurrentLine, i, ValidationSplited.Length, Math.Round((double)i / (double)ValidationSplited.Length * 100, 2));
+
+            //Check whether the output has the same item from answer.txt
+            if (OutputSplited.Contains(ValidationSplited[i]))
             {
-                MissingResults.Add(ValidationSplited[i]);
+                //Add to validated list
+                ValidatedList.Add(ValidationSplited[i]);
+                //Remove the item from to be analyze list
+                ListToBeAnalyze.Remove(ValidationSplited[i]);
             }
 
-            if (i == ValidationSplited.Length - 1)
+            //Analyze ListToBeAnalyze
+            Match MatchFromValidation = RegexPatterns.Answer().Match(ValidationSplited[i]);
+            var SameFileandTypeList = ListToBeAnalyze.Where(x => x.Contains($"{MatchFromValidation.Groups[1].Value}\t{MatchFromValidation.Groups[2].Value}")).ToArray();
+            foreach (string item in SameFileandTypeList)
             {
-                Console.WriteLine("Analyze Done!");
+                Match mt = RegexPatterns.Answer().Match(item);
+                //Make sure it's same file, eg: 10
+                if (mt.Groups[1].Value.Trim().Equals(MatchFromValidation.Groups[1].Value.Trim()))
+                {
+                    Match ValidationTimeRegex = RegexPatterns.ValidationTime().Match(MatchFromValidation.Groups[5].Value.Trim());
+                    //Check if it's a date or time
+                    if (ValidationTimeRegex.Success)
+                    {
+                        Match TimeRegex = RegexPatterns.ValidationTime().Match(mt.Groups[5].Value.Trim());
+                        bool IsStartIndexSame = mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim();
+                        bool IsEndIndexSame = mt.Groups[4].Value.Trim() == MatchFromValidation.Groups[4].Value.Trim();
+                        bool IsValueSame = TimeRegex.Groups[1].Value.Trim() != ValidationTimeRegex.Groups[1].Value.Trim();
+                        bool IsNormalizedValueSame = TimeRegex.Groups[2].Value.Trim() != ValidationTimeRegex.Groups[2].Value.Trim();
+                        if ((IsStartIndexSame | IsEndIndexSame) && (IsValueSame | IsNormalizedValueSame))
+                        {
+                            if (!MismatchList.Contains(item))
+                            {
+                                MismatchList.Add(item);
+                                ListToBeAnalyze.Remove(item);
+                            }
+                        }
+                    }
+                    else //Nah, it's not a date or time
+                    {
+                        if (mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim() 
+                            | mt.Groups[4].Value.Trim() == MatchFromValidation.Groups[4].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim())
+                        {
+                            if (!MismatchList.Contains(item))
+                            {
+                                MismatchList.Add(item);
+                                ListToBeAnalyze.Remove(item);
+                            }
+                        }
+                    }
+                }
+
             }
         }
 
+        //Generate missing value list
+        Console.WriteLine("Generating missing values list...");
+        MissingList = ValidationSplited.Where(x => !ValidatedList.Contains(x)).ToList();
+        //foreach (var item in ValidationSplited)
+        //{
+        //    var yy = RegexPatterns.Answer().Match(item);
+        //    var lt = MismatchList.Where(x => x.Contains($"{yy.Groups[1].Value}\t{yy.Groups[2].Value}")).Where(x => !x.Contains(yy.Groups[3].Value) | !x.Contains(yy.Groups[4].Value));
+        //    if (lt.Any())
+        //    {
+        //        Console.WriteLine(item);
+        //    }
+        //}
+
+        Console.WriteLine("Analyze Done!");
         //Calculate hit-rate
-        double HitRate = (double)MissingResults.Count / (double)ValidationSplited.Length * 100;
+        double HitRate = (double)ValidatedList.Count / (double)ValidationSplited.Length * 100;
 
         //Save validation result
         string ValidationSaveLocation = !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
-                                            ? Config.AppConfig.ValidateResultFilename
-                                            : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.ValidateResultFilename);
-        using StreamWriter sw = new(ValidationSaveLocation);
-        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
-        sw.WriteLine(string.Format("Output entries: {0}, Answer entries: {1}, Missing entries: {2}, Hit-rate: {3}%", OutputSplited.Length, ValidationSplited.Length, MissingResults.Count, Math.Round(HitRate, 2)));
-        sw.WriteLine("======================================================================");
-        sw.WriteLine(string.Join(string.Empty, MissingResults));
-        sw.Close();
+                                            ? "validated_answer.txt"
+                                            : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt");
+        string MismatchSaveLocation = !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
+                                            ? "mismatch_answer.txt"
+                                            : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt");
+        string MissingSaveLocation = !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
+                                            ? "missing_answer.txt"
+                                            : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt");
+
+        //Save files
+        File.WriteAllText(ValidationSaveLocation, string.Join('\n', ValidatedList));
+        File.WriteAllText(MismatchSaveLocation, string.Join('\n', MismatchList));
+        File.WriteAllText(MissingSaveLocation, string.Join('\n', MissingList));
+
+        //Need test
+        //using StreamWriter sw = new(ValidationSaveLocation);
+        //sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
+        //sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x)))));
+        //sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
+        //sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
+        //sw.WriteLine("======================================================================");
+        //sw.WriteLine(string.Join(string.Empty, MissingList));
+        //sw.Close();
 
         //Show validation result
-        Console.WriteLine("\nOutput entries: {0}, Answer entries: {1}, Missing entries: {2}, Hit-rate: {3}%", OutputSplited.Length, ValidationSplited.Length, MissingResults.Count, Math.Round(HitRate, 2));
+        Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
+        Console.WriteLine("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2));
         Console.WriteLine("Validation result is saved to {0}", ValidationSaveLocation);
-        Console.WriteLine("Press [Y] to open validation file OR any key to exit.");
-        if (Console.ReadKey().Key is ConsoleKey.Y)
+        Console.WriteLine("Mismatch result is saved to {0}", MismatchSaveLocation);
+        Console.WriteLine("Missing result is saved to {0}", MissingSaveLocation);
+        Console.WriteLine("Press [Y] to open validation file, [M] key return to main menu OR any key to exit.");
+        switch (Console.ReadKey().Key)
         {
-            Utils.OpenEditor(ValidationSaveLocation);
+            case ConsoleKey.Y:
+                Utils.OpenEditor(ValidationSaveLocation);
+                break;
+            case ConsoleKey.M:
+                Console.Beep();
+                break;
+            default:
+                Environment.Exit(0);
+                break;
         }
-        else
-            Environment.Exit(0);
     }
     #endregion
 }

@@ -47,7 +47,6 @@ public class ConfigData
     public string SaveFilename { get; set; } = "answer.txt";
     public string EditorLocation { get; set; } = Config.GetEditorByPlatform();
     public IEnumerable<string> ValidateFileLocations { get; set; } = [];
-    public string ValidateResultFilename { get; set; } = "validation.txt";
     public string ValidateResultLocation { get; set; } = string.Empty;
     public CustomRegexConfigClass CustomRegex { get; set; } = new();
 }

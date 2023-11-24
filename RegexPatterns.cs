@@ -21,6 +21,8 @@ internal partial class RegexPatterns
     internal static partial Regex DoctorVariantTwo();
     [GeneratedRegex(@"(?:Result)\s?\w+\.?\s?(\w+\s?\.?\s?\w+\.?\w+)")]
     internal static partial Regex DoctorVariantThree();
+    [GeneratedRegex(@"TO: ([A-Z]{2});([A-Z]{2})|\(([A-Z]{2})\/")]
+    internal static partial Regex DoctorVariantFour();
 
     [GeneratedRegex("^to\\s?(?:Dr|DR)\\.\\s?")]
     internal static partial Regex DocUnusedString();
@@ -90,5 +92,8 @@ internal partial class RegexPatterns
 
     [GeneratedRegex(@"^(\w+)\s(\w+)\s(\w+)\s(\w+)\s(\w+.*)", RegexOptions.Multiline)]
     internal static partial Regex Answer();
+
+    [GeneratedRegex(@"^(\d+.+)\t(\d+.+)$")]
+    internal static partial Regex ValidationTime();
     #endregion
 }

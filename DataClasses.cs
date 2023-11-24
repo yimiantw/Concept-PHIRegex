@@ -5,7 +5,6 @@ internal class RegexData
     internal string Value { get; set; } = string.Empty;
     internal int StartIndex { get; set; } = 0;
     internal int EndIndex { get; set; } = 0;
-    internal string Type { get; set; } = string.Empty;
     internal string FromPattern { get; set; } = string.Empty;
 }
 
