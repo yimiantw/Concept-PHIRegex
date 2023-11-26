@@ -32,22 +32,22 @@ jobs:
         name: Windows (x64)
         path: ${{ env.OUTPUT_DIR }}\publish\Concept-PHIRegex.exe
 
-  Android-ARM64:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore -r android-arm64 /p:PublishReadyToRun=true
-    - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishAot=false /p:PublishReadyToRun=false
-    - uses: actions/upload-artifact@v3
-      with:
-        name: Android (ARM64, Experimental)
-        path: ${{ env.OUTPUT_DIR }}/publish
+  # Android-ARM64:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Setup .NET
+  #     uses: actions/setup-dotnet@v3
+  #     with:
+  #       dotnet-version: 8.0.x
+  #   - name: Restore dependencies
+  #     run: dotnet restore -r android-arm64 /p:PublishReadyToRun=true
+  #   - name: Publish
+  #     run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishAot=false /p:PublishReadyToRun=false
+  #   - uses: actions/upload-artifact@v3
+  #     with:
+  #       name: Android (ARM64, Experimental)
+  #       path: ${{ env.OUTPUT_DIR }}/publish
 
   MacOS-ARM64:
     runs-on: macos-latest
