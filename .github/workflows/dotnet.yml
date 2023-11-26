@@ -11,8 +11,8 @@ on:
 
 env:
   BUILD_ARGS: None
-  PUBLISHXML_PATH: ${{ github.workspace }}/.github/workflows/publish-settings.pubxml
-  OUTPUT_DIR: ../dotnet_build
+  PUBLISHXML_PATH: ${{ github.workspace }}/Properties/PublishProfiles/FolderProfile.pubxml
+  OUTPUT_DIR: ${{ github.workspace }}/dotnet_build
 
 jobs:
   build-windows:
