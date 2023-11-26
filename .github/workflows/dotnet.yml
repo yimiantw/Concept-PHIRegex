@@ -30,7 +30,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: Windows (x64)
-        path: ${{ env.OUTPUT_DIR }}\publish\Concept-PHIRegex.exe
+        path: ${{ env.OUTPUT_DIR }}\publish
 
   build-android-arm64:
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: Android (ARM64)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex.dll
+        path: ${{ env.OUTPUT_DIR }}/publish
 
   build-macos-arm64:
     runs-on: macos-latest
@@ -64,7 +64,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (ARM64, Apple M1 or newer)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/publish
 
   build-macos-x64:
     runs-on: macos-latest
@@ -81,4 +81,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (x64, Intel and Apple Silicon)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/publish
