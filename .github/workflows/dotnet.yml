@@ -1,7 +1,7 @@
 # This workflow will build a .NET project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
-name: .NET
+name: .NET Console
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
 env:
   BUILD_ARGS: None
   PUBLISHXML_PATH: ${{ github.workspace }}/Properties/PublishProfiles/FolderProfile.pubxml
-  OUTPUT_DIR: ${{ github.workspace }}/dotnet_build/
+  OUTPUT_DIR: ${{ github.workspace }}/dotnet_build
 
 jobs:
   build-windows:
@@ -26,7 +26,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r win-x64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=win-x64
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=win-x64 -p:PublishAot=true -p:PublishSingleFile=false
     - uses: actions/upload-artifact@v3
       with:
         name: Windows (x64)
@@ -43,11 +43,11 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r android-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishSingleFile=false
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishAot=true -p:PublishSingleFile=false
     - uses: actions/upload-artifact@v3
       with:
         name: Android (ARM64)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex.dll
 
   build-macos-arm64:
     runs-on: macos-latest
@@ -60,7 +60,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r osx-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-arm64
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-arm64 -p:PublishAot=true -p:PublishSingleFile=false
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (ARM64, Apple M1 or newer)
@@ -77,8 +77,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r osx-x64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-x64
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-x64 -p:PublishAot=true -p:PublishSingleFile=false
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (x64, Intel and Apple Silicon)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex.dll
+        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
