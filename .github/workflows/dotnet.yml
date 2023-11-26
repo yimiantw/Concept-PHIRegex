@@ -9,11 +9,14 @@ on:
   pull_request:
     branches: [ "main" ]
 
+env:
+  BUILD_ARGS: None
+  PUBLISHXML_PATH: ../.github/workflows/publish-settings.pubxml
+  OUTPUT_DIR: ../dotnet_build
+
 jobs:
   build-windows:
-
     runs-on: windows-latest
-    
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -23,16 +26,14 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r win-x64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -p:PublishAot=true -p:TargetFramework=net8.0 -p:RuntimeIdentifier=win-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet build --no-restore -c Release -o ${{ env.OUTPUT_DIR }} -r win-x64 --self-contained true /p:PublishProfile=${{ env.PUBLISHXML_PATH }}
     - uses: actions/upload-artifact@v3
       with:
         name: Windows (x64)
-        path: D:\a\Concept-PHIRegex\Concept-PHIRegex\bin\Release\net8.0\win-x64\publish\Concept-PHIRegex.exe
+        path: ${{ env.OUTPUT_DIR }}\Concept-PHIRegex.exe
 
   build-android-arm64:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -42,16 +43,14 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r android-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -p:PublishAot=true -p:RuntimeIdentifier=android-arm64 -p:TargetFramework=net8.0 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet build --no-restore -c Release -o ${{ env.OUTPUT_DIR }} -r android-arm64 --self-contained true /p:PublishProfile=${{ env.PUBLISHXML_PATH }}
     - uses: actions/upload-artifact@v3
       with:
         name: Android (ARM64)
-        path: /home/runner/work/Concept-PHIRegex/Concept-PHIRegex/bin/Release/net8.0/linux-x64/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/Concept-PHIRegex
 
   build-macos-arm64:
-
     runs-on: macos-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -61,16 +60,14 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r osx-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -p:PublishAot=true -p:TargetFramework=net8.0 -p:RuntimeIdentifier=osx-arm64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet build --no-restore -c Release -o ${{ env.OUTPUT_DIR }} -r osx-arm64 --self-contained true /p:PublishProfile=${{ env.PUBLISHXML_PATH }}
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (ARM64, Apple M1 or newer)
-        path: /Users/runner/work/Concept-PHIRegex/Concept-PHIRegex/bin/Release/net8.0/osx-x64/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/Concept-PHIRegex
 
   build-macos-x64:
-
     runs-on: macos-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
@@ -80,8 +77,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r osx-x64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -p:PublishAot=true -p:TargetFramework=net8.0 -p:RuntimeIdentifier=osx-x64 -p:SelfContained=true -p:PublishReadyToRun=true -p:PublishSingleFile=true -p:Configuration=Release -p:PublishReadyToRunComposite=true -p:DebugType=none -p:OptimizationPreference=Speed -p:PublishTrimmed=true -p:TrimMode=full -p:EnableTrimAnalyzer=true -p:TrimmerRemoveSymbols=true -p:DebuggerSupport=false -p:EnableUnsafeBinaryFormatterSerialization=false -p:EnableUnsafeUTF7Encoding=false -p:EventSourceSupport=false -p:HttpActivityPropagationSupport=false -p:MetadataUpdaterSupport=false -p:StackTraceSupport=false -p:InvariantGlobalization=false
+      run: dotnet build --no-restore -c Release -o ${{ env.OUTPUT_DIR }} -r osx-x64 --self-contained true /p:PublishProfile=${{ env.PUBLISHXML_PATH }}
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (x64, Intel and Apple Silicon)
-        path: /Users/runner/work/Concept-PHIRegex/Concept-PHIRegex/bin/Release/net8.0/osx-x64/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/Concept-PHIRegex
