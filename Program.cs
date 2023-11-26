@@ -607,35 +607,71 @@ internal partial class Program
             {
                 string[] SplitedPattern = Pattern.Split("@@");
                 string RegexPattern = SplitedPattern[0];
-                string? Index = SplitedPattern.Length > 1 ? SplitedPattern[1] : string.Empty;
+                string[] Indexes = SplitedPattern.Length > 1 ? SplitedPattern[1].Split(',') : [];
 
                 MatchCollection RegexCollection = Regex.Matches(RawData, Pattern);
                 if (RegexCollection.Count > 0)
                 {
                     foreach (Match MatchID in RegexCollection.Cast<Match>())
                     {
-                        string Value = !string.IsNullOrEmpty(Index) ? MatchID.Groups[Index].Value.Trim() : MatchID.Value.Trim();
-                        int StartIndex = RawData.IndexOf(Value);
-                        int EndIndex = RawData.IndexOf(Value) + Value.Length;
-
-                        if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
+                        if (Indexes.Length > 0)
                         {
-                            List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
-                            JustData?.Add(new()
+                            foreach (string Index in Indexes)
                             {
-                                Value = Value,
-                                StartIndex = StartIndex,
-                                EndIndex = EndIndex,
-                            });
+                                if (int.Parse(Index) < MatchID.Groups.Count)
+                                {
+                                    string Value = MatchID.Groups[Index].Value.Trim();
+                                    int StartIndex = RawData.IndexOf(Value);
+                                    int EndIndex = RawData.IndexOf(Value) + Value.Length;
+
+                                    if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
+                                    {
+                                        List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
+                                        JustData?.Add(new()
+                                        {
+                                            Value = Value,
+                                            StartIndex = StartIndex,
+                                            EndIndex = EndIndex,
+                                        });
+                                    }
+                                    else
+                                    {
+                                        RegexData? JustData = DataTuple.Data as RegexData;
+                                        if (JustData is not null)
+                                        {
+                                            JustData.Value = Value;
+                                            JustData.StartIndex = StartIndex;
+                                            JustData.EndIndex = EndIndex;
+                                        }
+                                    }
+                                }
+                            }
                         }
                         else
                         {
-                            RegexData? JustData = DataTuple.Data as RegexData;
-                            if (JustData is not null)
+                            string Value = MatchID.Value.Trim();
+                            int StartIndex = RawData.IndexOf(Value);
+                            int EndIndex = RawData.IndexOf(Value) + Value.Length;
+
+                            if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
                             {
-                                JustData.Value = Value;
-                                JustData.StartIndex = StartIndex;
-                                JustData.EndIndex = EndIndex;
+                                List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
+                                JustData?.Add(new()
+                                {
+                                    Value = Value,
+                                    StartIndex = StartIndex,
+                                    EndIndex = EndIndex,
+                                });
+                            }
+                            else
+                            {
+                                RegexData? JustData = DataTuple.Data as RegexData;
+                                if (JustData is not null)
+                                {
+                                    JustData.Value = Value;
+                                    JustData.StartIndex = StartIndex;
+                                    JustData.EndIndex = EndIndex;
+                                }
                             }
                         }
                     }
