@@ -12,7 +12,7 @@ on:
 env:
   BUILD_ARGS: None
   PUBLISHXML_PATH: ${{ github.workspace }}/Properties/PublishProfiles/FolderProfile.pubxml
-  OUTPUT_DIR: ${{ github.workspace }}/dotnet_build
+  OUTPUT_DIR: ${{ github.workspace }}/dotnet_build/
 
 jobs:
   build-windows:
