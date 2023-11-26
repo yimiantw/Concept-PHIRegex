@@ -15,7 +15,7 @@ env:
   OUTPUT_DIR: ${{ github.workspace }}/dotnet_build
 
 jobs:
-  Windows-NativeAOT:
+  Windows-x64:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
@@ -43,13 +43,13 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r android-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishAot=false
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishAot=false /p:PublishReadyToRun=false
     - uses: actions/upload-artifact@v3
       with:
-        name: Android (ARM64)
+        name: Android (ARM64, Experimental)
         path: ${{ env.OUTPUT_DIR }}/publish
 
-  MacOS-ARM64-NativeAOT:
+  MacOS-ARM64:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
         name: MacOS (ARM64, Apple M1 or newer)
         path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
 
-  MacOS-x64-NativeAOT:
+  MacOS-x64:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
