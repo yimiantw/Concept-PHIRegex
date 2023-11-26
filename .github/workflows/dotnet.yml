@@ -26,11 +26,11 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r win-x64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=win-x64
-    #- uses: actions/upload-artifact@v3
-    #  with:
-    #    name: Windows (x64)
-    #    path: ${{ env.OUTPUT_DIR }}\Concept-PHIRegex.exe
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=win-x64
+    - uses: actions/upload-artifact@v3
+      with:
+        name: Windows (x64)
+        path: ${{ env.OUTPUT_DIR }}
 
   build-android-arm64:
     runs-on: ubuntu-latest
@@ -43,11 +43,11 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r android-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64
-    #- uses: actions/upload-artifact@v3
-    #  with:
-    #    name: Android (ARM64)
-    #    path: ${{ env.OUTPUT_DIR }}/Concept-PHIRegex
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=android-arm64 -p:PublishSingleFile=false
+    - uses: actions/upload-artifact@v3
+      with:
+        name: Android (ARM64)
+        path: ${{ env.OUTPUT_DIR }}
 
   build-macos-arm64:
     runs-on: macos-latest
@@ -60,11 +60,11 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r osx-arm64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-arm64
-    #- uses: actions/upload-artifact@v3
-    #  with:
-    #    name: MacOS (ARM64, Apple M1 or newer)
-    #    path: ${{ env.OUTPUT_DIR }}/Concept-PHIRegex
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-arm64
+    - uses: actions/upload-artifact@v3
+      with:
+        name: MacOS (ARM64, Apple M1 or newer)
+        path: ${{ env.OUTPUT_DIR }}
 
   build-macos-x64:
     runs-on: macos-latest
@@ -77,8 +77,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore -r osx-x64 /p:PublishReadyToRun=true
     - name: Publish
-      run: dotnet publish --no-restore -f net8.0 -c Release -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-x64
-    #- uses: actions/upload-artifact@v3
-    #  with:
-    #    name: MacOS (x64, Intel and Apple Silicon)
-    #    path: ${{ env.OUTPUT_DIR }}/Concept-PHIRegex
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }} -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-x64
+    - uses: actions/upload-artifact@v3
+      with:
+        name: MacOS (x64, Intel and Apple Silicon)
+        path: ${{ env.OUTPUT_DIR }}
