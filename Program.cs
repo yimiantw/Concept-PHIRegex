@@ -160,6 +160,8 @@ internal partial class Program
         string IntroTexts = Utils.GetAssemblyResource("Concept-PHIRegex.welcome.txt");
         while (true)
         {
+            //Clear console
+            Console.Clear();
             //Found previous location
             if (!string.IsNullOrEmpty(Config.AppConfig.PreviousLocation))
             {
@@ -175,8 +177,6 @@ internal partial class Program
             string? Input = Console.ReadLine();
             if (Input != null)
             {
-                //Clear console
-                Console.Clear();
                 Input = Input.Replace("\"", string.Empty);
                 //If input is empty, use program's location
                 if (string.IsNullOrEmpty(Input))
@@ -824,15 +824,22 @@ internal partial class Program
         //Generate missing value list
         Console.WriteLine("Generating missing values list...");
         MissingList = ValidationSplited.Where(x => !ValidatedList.Contains(x)).ToList();
-        //foreach (var item in ValidationSplited)
-        //{
-        //    var yy = RegexPatterns.Answer().Match(item);
-        //    var lt = MismatchList.Where(x => x.Contains($"{yy.Groups[1].Value}\t{yy.Groups[2].Value}")).Where(x => !x.Contains(yy.Groups[3].Value) | !x.Contains(yy.Groups[4].Value));
-        //    if (lt.Any())
-        //    {
-        //        Console.WriteLine(item);
-        //    }
-        //}
+        foreach (string item in MismatchList)
+        {
+            Match Mismatched = RegexPatterns.Answer().Match(item);
+            foreach (string item2 in MissingList.ToArray())
+            {
+                Match Missing = RegexPatterns.Answer().Match(item2);
+                //Check filename, type
+                if (Mismatched.Groups[1].Value.Equals(Missing.Groups[1].Value) && Mismatched.Groups[2].Value.Equals(Missing.Groups[2].Value))
+                {
+                    if (Mismatched.Groups[3].Value.Equals(Missing.Groups[3].Value) | Mismatched.Groups[4].Value.Equals(Missing.Groups[4].Value))
+                    {
+                        MissingList.Remove(item2);
+                    }
+                }
+            }
+        }
 
         Console.WriteLine("Analyze Done!");
         //Calculate hit-rate
@@ -850,19 +857,47 @@ internal partial class Program
                                             : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt");
 
         //Save files
-        File.WriteAllText(ValidationSaveLocation, string.Join('\n', ValidatedList));
-        File.WriteAllText(MismatchSaveLocation, string.Join('\n', MismatchList));
-        File.WriteAllText(MissingSaveLocation, string.Join('\n', MissingList));
-
-        //Need test
-        //using StreamWriter sw = new(ValidationSaveLocation);
-        //sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
-        //sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x)))));
-        //sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
-        //sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
-        //sw.WriteLine("======================================================================");
-        //sw.WriteLine(string.Join(string.Empty, MissingList));
-        //sw.Close();
+        //File.WriteAllText(ValidationSaveLocation, string.Join('\n', ValidatedList));
+        //File.WriteAllText(MismatchSaveLocation, string.Join('\n', MismatchList));
+        //File.WriteAllText(MissingSaveLocation, string.Join('\n', MissingList));
+        for (int i = 1; i < 4; i++)
+        {
+            switch (i)
+            {
+                case 1:
+                    {
+                        using StreamWriter sw = new(ValidationSaveLocation);
+                        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
+                        sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x)))));
+                        sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
+                        sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
+                        sw.WriteLine("======================================================================");
+                        sw.WriteLine(string.Join('\n', ValidatedList).Trim());
+                        sw.Close();
+                    }
+                    break;
+                case 2:
+                    {
+                        using StreamWriter sw = new(MismatchSaveLocation);
+                        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
+                        sw.WriteLine(string.Format("Mismatch entries: {0}", MismatchList.Count));
+                        sw.WriteLine("======================================================================");
+                        sw.WriteLine(string.Join('\n', MismatchList).Trim());
+                        sw.Close();
+                    }
+                    break;
+                case 3:
+                    {
+                        using StreamWriter sw = new(MissingSaveLocation);
+                        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
+                        sw.WriteLine(string.Format("Missing entries: {0}", MissingList.Count));
+                        sw.WriteLine("======================================================================");
+                        sw.WriteLine(string.Join('\n', MissingList).Trim());
+                        sw.Close();
+                    }
+                    break;
+            }
+        }
 
         //Show validation result
         Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
