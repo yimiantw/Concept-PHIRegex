@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -823,11 +825,14 @@ internal partial class Program
         }
 
         //Generate missing value list
-        Console.WriteLine("Generating missing values list...");
         MissingList = ValidationSplited.Where(x => !ValidatedList.Contains(x)).ToList();
-        foreach (string item in MismatchList)
+        for (int i = 0; i < MismatchList.Count; i++)
         {
-            Match Mismatched = RegexPatterns.Answer().Match(item);
+            Console.Clear();
+            //Get filename
+            Match Mismatched = RegexPatterns.Answer().Match(MismatchList[i]);
+            Console.WriteLine("Generating missing values list... This may take a while...");
+            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", Mismatched.Groups[1].Value, i, MismatchList.Count, Math.Round((double)i / (double)MismatchList.Count * 100, 2));
             foreach (string item2 in MissingList.ToArray())
             {
                 Match Missing = RegexPatterns.Answer().Match(item2);
@@ -858,54 +863,39 @@ internal partial class Program
                                             : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt");
 
         //Save files
-        //File.WriteAllText(ValidationSaveLocation, string.Join('\n', ValidatedList));
-        //File.WriteAllText(MismatchSaveLocation, string.Join('\n', MismatchList));
-        //File.WriteAllText(MissingSaveLocation, string.Join('\n', MissingList));
         for (int i = 1; i < 4; i++)
         {
-            switch (i)
+            using StreamWriter sw = new(i switch
             {
-                case 1:
-                    {
-                        using StreamWriter sw = new(ValidationSaveLocation);
-                        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
-                        sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x)))));
-                        sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
-                        sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
-                        sw.WriteLine("======================================================================");
-                        sw.WriteLine(string.Join('\n', ValidatedList).Trim());
-                        sw.Close();
-                    }
-                    break;
-                case 2:
-                    {
-                        using StreamWriter sw = new(MismatchSaveLocation);
-                        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
-                        sw.WriteLine(string.Format("Mismatch entries: {0}", MismatchList.Count));
-                        sw.WriteLine("======================================================================");
-                        sw.WriteLine(string.Join('\n', MismatchList).Trim());
-                        sw.Close();
-                    }
-                    break;
-                case 3:
-                    {
-                        using StreamWriter sw = new(MissingSaveLocation);
-                        sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
-                        sw.WriteLine(string.Format("Missing entries: {0}", MissingList.Count));
-                        sw.WriteLine("======================================================================");
-                        sw.WriteLine(string.Join('\n', MissingList).Trim());
-                        sw.Close();
-                    }
-                    break;
+                1 => ValidationSaveLocation,
+                2 => MismatchSaveLocation,
+                3 => MissingSaveLocation,
+                _ => throw new NotImplementedException()
+            });
+            sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
+            if (i is 1)
+            {
+                sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x)))));
+                sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
+                sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
+                sw.WriteLine("======================================================================");
+                sw.WriteLine(string.Join('\n', ValidatedList).Trim());
             }
+            else
+            {
+                sw.WriteLine(i is 2 
+                    ? string.Format("Mismatch entries: {0}", MismatchList.Count) 
+                    : string.Format("Missing entries: {0}", MissingList.Count));
+                sw.WriteLine("======================================================================");
+                sw.WriteLine(string.Join('\n', i is 2 ? MismatchList : MissingList).Trim());
+            }
+            sw.Close();
         }
 
         //Show validation result
         Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
         Console.WriteLine("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2));
-        Console.WriteLine("Validation result is saved to {0}", ValidationSaveLocation);
-        Console.WriteLine("Mismatch result is saved to {0}", MismatchSaveLocation);
-        Console.WriteLine("Missing result is saved to {0}", MissingSaveLocation);
+        Console.WriteLine("Validation result is saved to {0}\nMismatch result is saved to {1}\nMissing result is saved to {2}", ValidationSaveLocation, MismatchSaveLocation, MissingSaveLocation);
         Console.WriteLine("Press [Y] to open validation file, [M] key return to main menu OR any key to exit.");
         switch (Console.ReadKey().Key)
         {
