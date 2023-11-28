@@ -64,7 +64,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (ARM64, Apple M1 or newer)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/publish
 
   MacOS-x64:
     runs-on: macos-latest
@@ -81,4 +81,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: MacOS (x64, Intel and Apple Silicon)
-        path: ${{ env.OUTPUT_DIR }}/publish/Concept-PHIRegex
+        path: ${{ env.OUTPUT_DIR }}/publish
