@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -170,7 +167,7 @@ internal partial class Program
                 if (Path.Exists(Config.AppConfig.PreviousLocation))
                 {
                     Console.WriteLine($"Found previous location: {Config.AppConfig.PreviousLocation}");
-                    Console.WriteLine($"Type \"Y\" to use it");
+                    Console.WriteLine($"Type [Y] to use it");
                 }
                 else
                     Config.AppConfig.PreviousLocation = string.Empty;
@@ -852,24 +849,21 @@ internal partial class Program
         double HitRate = (double)ValidatedList.Count / (double)ValidationSplited.Length * 100;
 
         //Save validation result
-        string ValidationSaveLocation = !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
-                                            ? "validated_answer.txt"
-                                            : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt");
-        string MismatchSaveLocation = !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
-                                            ? "mismatch_answer.txt"
-                                            : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt");
-        string MissingSaveLocation = !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
-                                            ? "missing_answer.txt"
-                                            : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt");
+        (string Validation, string Mismatch, string Missing) Location = (!string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) 
+            ? "validated_answer.txt" : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt"), 
+            !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "mismatch_answer.txt"
+                                  : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt"), 
+                                  !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "missing_answer.txt"
+                                            : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt"));
 
         //Save files
         for (int i = 1; i < 4; i++)
         {
             using StreamWriter sw = new(i switch
             {
-                1 => ValidationSaveLocation,
-                2 => MismatchSaveLocation,
-                3 => MissingSaveLocation,
+                1 => Location.Validation,
+                2 => Location.Mismatch,
+                3 => Location.Missing,
                 _ => throw new NotImplementedException()
             });
             sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
@@ -895,12 +889,12 @@ internal partial class Program
         //Show validation result
         Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
         Console.WriteLine("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2));
-        Console.WriteLine("Validation result is saved to {0}\nMismatch result is saved to {1}\nMissing result is saved to {2}", ValidationSaveLocation, MismatchSaveLocation, MissingSaveLocation);
+        Console.WriteLine("Validation result is saved to {0}\nMismatch result is saved to {1}\nMissing result is saved to {2}", Location.Validation, Location.Mismatch, Location.Missing);
         Console.WriteLine("Press [Y] to open validation file, [M] key return to main menu OR any key to exit.");
         switch (Console.ReadKey().Key)
         {
             case ConsoleKey.Y:
-                Utils.OpenEditor(ValidationSaveLocation);
+                Utils.OpenEditor(Location.Validation);
                 break;
             case ConsoleKey.M:
                 Console.Beep();
