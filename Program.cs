@@ -379,7 +379,8 @@ internal partial class Program
         IEnumerable<Match> Regex_Doctors = RegexPatterns.DoctorVariantOne().Matches(RawData)
                                             .Concat(RegexPatterns.DoctorVariantTwo().Matches(RawData))
                                             .Concat(RegexPatterns.DoctorVariantThree().Matches(RawData))
-                                            .Concat(RegexPatterns.DoctorVariantFour().Matches(RawData));
+                                            .Concat(RegexPatterns.DoctorVariantFour().Matches(RawData))
+                                            .Concat(RegexPatterns.DoctorVariantFive().Matches(RawData));
         if (Regex_Doctors.Any())
         {
             foreach (Match Doc in Regex_Doctors)
