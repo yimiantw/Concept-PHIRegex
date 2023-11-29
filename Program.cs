@@ -44,7 +44,8 @@ internal partial class Program
                 Config.AppConfig.PreviousLocation = InputPath;
             Config.WriteConfig();
 #else
-                string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Second_Phase", "*.txt", SearchOption.TopDirectoryOnly);
+                //string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Second_Phase", "*.txt", SearchOption.TopDirectoryOnly);
+                string[] FilesArray = [@"D:\Test\DataSets\First_Phase\105.txt"];
                 Config.AppConfig.ValidateFileLocations = new string[]
                 {
                     @"D:\Test\DataSets\first_answer.txt",
@@ -288,19 +289,51 @@ internal partial class Program
                 StartIndex = RawData.IndexOf(City),
                 EndIndex = RawData.IndexOf(City) + City.Length
             };
-            string State = Regex_Address.Groups[4].Value.Trim();
-            Data.State = new()
+
+            string State()
             {
-                Value = State,
-                StartIndex = RawData.IndexOf(State),
-                EndIndex = RawData.IndexOf(State) + State.Length
+                if (!string.IsNullOrEmpty(Regex_Address.Groups[4].Value))
+                {
+                    return Regex_Address.Groups[4].Value.Trim();
+                }
+                if (!string.IsNullOrEmpty(Regex_Address.Groups[6].Value))
+                {
+                    return Regex_Address.Groups[6].Value.Trim();
+                }
+                return string.Empty;
             };
-            string Zip = Regex_Address.Groups[5].Value.Trim();
+
+            if (!string.IsNullOrEmpty(State()))
+            {
+                Data.State = new()
+                {
+                    Value = State(),
+                    StartIndex = RawData.IndexOf(State()),
+                    EndIndex = RawData.IndexOf(State()) + State().Length
+                };
+            }
+
+            string Zip()
+            {
+                if (!string.IsNullOrEmpty(Regex_Address.Groups[5].Value))
+                {
+                    return Regex_Address.Groups[5].Value.Trim();
+                }
+                if (!string.IsNullOrEmpty(Regex_Address.Groups[7].Value))
+                {
+                    return Regex_Address.Groups[7].Value.Trim();
+                }
+                if (!string.IsNullOrEmpty(Regex_Address.Groups[8].Value))
+                {
+                    return Regex_Address.Groups[8].Value.Trim();
+                }
+                return string.Empty;
+            };
             Data.Zip = new()
             {
-                Value = Zip,
-                StartIndex = RawData.IndexOf(Zip),
-                EndIndex = RawData.IndexOf(Zip) + Zip.Length
+                Value = Zip(),
+                StartIndex = RawData.IndexOf(Zip()),
+                EndIndex = RawData.IndexOf(Zip()) + Zip().Length
             };
         }
         #endregion
@@ -385,15 +418,31 @@ internal partial class Program
         {
             foreach (Match Doc in Regex_Doctors)
             {
-                string TrimmedDoc = RegexPatterns.DocUnusedString().Replace(Doc.Groups[1].Value, string.Empty).Trim();
-                if (!Data.Doctors.Any(x => x.Value.Contains(TrimmedDoc)))
+                IEnumerable<Group> DocValues = Doc.Groups.Values.Skip(1);
+                foreach (Group item in DocValues)
                 {
-                    Data.Doctors.Add(new()
+                    string TrimmedDoc = RegexPatterns.DocUnusedString().Replace(item.Value, string.Empty).Trim();
+                    if (!Data.Doctors.Any(x => x.Value.Contains(TrimmedDoc)))
                     {
-                        Value = TrimmedDoc,
-                        StartIndex = RawData.IndexOf(Doc.Groups[1].Value),
-                        EndIndex = RawData.IndexOf(Doc.Groups[1].Value) + Doc.Groups[1].Value.Length,
-                    });
+                        if (item.Value.Length is 2)
+                        {
+                            Data.Doctors.Add(new()
+                            {
+                                Value = item.Value,
+                                StartIndex = item.Index,
+                                EndIndex = item.Index + item.Value.Length,
+                            });
+                        }
+                        else
+                        {
+                            Data.Doctors.Add(new()
+                            {
+                                Value = TrimmedDoc,
+                                StartIndex = RawData.IndexOf(item.Value),
+                                EndIndex = RawData.IndexOf(item.Value) + item.Value.Length,
+                            });
+                        }
+                    }
                 }
             }
         }

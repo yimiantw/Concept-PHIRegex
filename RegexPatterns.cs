@@ -21,7 +21,7 @@ internal partial class RegexPatterns
     internal static partial Regex DoctorVariantTwo();
     [GeneratedRegex(@"(?:Result)\s?\w+\.?\s?(\w+\s?\.?\s?\w+\.?\w+)")]
     internal static partial Regex DoctorVariantThree();
-    [GeneratedRegex(@"TO: ([A-Z]{2});([A-Z]{2})")]
+    [GeneratedRegex(@"TO: ([A-Z]{2})(?:;[\s{2}]?|:[\s{2}]?|\s{2})\s?([A-Z]{2})")]
     internal static partial Regex DoctorVariantFour();
     [GeneratedRegex(@"\(([A-Z]{2})\/")]
     internal static partial Regex DoctorVariantFive();
@@ -46,7 +46,7 @@ internal partial class RegexPatterns
     [GeneratedRegex(@"(?:\((\w+(?:\W|\s)?\w+\s(?:Corporation|Company))|(?:Performed\sat\s)(\w+\s?(?:&|\s)\s?\w+\s?\w+)|(?:Department\sof\s\w+\s?\w?)\,\s(\w+)\,\s\w)")]
     internal static partial Regex Organization();
 
-    [GeneratedRegex(@"^(?:(\w+(?:\s?\w)+)|((?:PO|P.O.)\s(?:BOX)\s\d{2,4}))\n(\w+(?:\s?\w)+)\s{2}((?:[A-Za-z]+\s){1,})\s{1,2}(\d{4})", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^(?:(\w+(?:\s?\w)+)|((?:PO|P.O.)\s(?:BOX)\s\d{2,4}))\n(\w+(?:\s?\w)+)\s{2}(?:((?:[A-Za-z]+\s){1,})\s{1,2}(\d{4})|([A-Za-z]+\s[A-Za-z]+)(\d{4})|\s{2}(\d{4}))", RegexOptions.Multiline)]
     internal static partial Regex Address(); //Including Street, City, State, Zip, Location-Other
 
     //Countries
