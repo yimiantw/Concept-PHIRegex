@@ -92,11 +92,11 @@ internal partial class RegexPatterns
 
     [GeneratedRegex(@"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")]
     internal static partial Regex IPv4Address();
+    #endregion
 
     [GeneratedRegex(@"^(\w+)\s(\w+)\s(\w+)\s(\w+)\s(\w+.*)", RegexOptions.Multiline)]
     internal static partial Regex Answer();
 
     [GeneratedRegex(@"^(\d+.+)\t(\d+.+)$")]
     internal static partial Regex ValidationTime();
-    #endregion
 }

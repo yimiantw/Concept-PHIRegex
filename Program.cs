@@ -45,7 +45,7 @@ internal partial class Program
             Config.WriteConfig();
 #else
                 //string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Second_Phase", "*.txt", SearchOption.TopDirectoryOnly);
-                string[] FilesArray = [@"D:\Test\DataSets\First_Phase\105.txt"];
+                string[] FilesArray = [@"D:\Test\DataSets\First_Phase\103.txt"];
                 Config.AppConfig.ValidateFileLocations = new string[]
                 {
                     @"D:\Test\DataSets\first_answer.txt",
@@ -818,25 +818,48 @@ internal partial class Program
             Console.WriteLine("Processing validation data... This may take a while...");
             Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", FilenameInCurrentLine, i, ValidationSplited.Length, Math.Round((double)i / (double)ValidationSplited.Length * 100, 2));
 
+            string CurrentItem = ValidationSplited[i];
+            Match RegexOfCurrentItem = RegexPatterns.Answer().Match(CurrentItem);
             //Check whether the output has the same item from answer.txt
-            if (OutputSplited.Contains(ValidationSplited[i]))
+            if (OutputSplited.Contains(CurrentItem))
             {
                 //Add to validated list
-                ValidatedList.Add(ValidationSplited[i]);
+                ValidatedList.Add(CurrentItem);
                 //Remove the item from to be analyze list
-                ListToBeAnalyze.Remove(ValidationSplited[i]);
+                ListToBeAnalyze.Remove(CurrentItem);
+
+            }
+
+            if (RegexOfCurrentItem.Groups[2].Value.Equals("TIME"))
+            {
+                Match RegexOfValidItem = RegexPatterns.ValidationTime().Match(RegexOfCurrentItem.Groups[5].Value);
+                foreach (string item in OutputSplited)
+                {
+                    Match RegexOfOutput = RegexPatterns.Answer().Match(item);
+                    Match RegexOfOutputItem = RegexPatterns.ValidationTime().Match(RegexOfCurrentItem.Groups[5].Value);
+                    if (RegexOfOutput.Groups[1].Value.Equals(RegexOfCurrentItem.Groups[1].Value) && RegexOfOutput.Groups[2].Value.Equals(RegexOfCurrentItem.Groups[2].Value) && RegexOfOutput.Groups[3].Value.Equals(RegexOfCurrentItem.Groups[3].Value) && RegexOfOutput.Groups[4].Value.Equals(RegexOfCurrentItem.Groups[4].Value) && RegexOfValidItem.Groups[1].Value.Equals(RegexOfOutputItem.Groups[1].Value) && RegexOfValidItem.Groups[2].Value.Equals(RegexOfOutputItem.Groups[2].Value))
+                    {
+                        //Console.WriteLine(RegexOfOutput);
+                        ValidatedList.Add(CurrentItem);
+                        ListToBeAnalyze.Remove(CurrentItem);
+                        //Console.ReadKey();
+                    }
+                }
             }
 
             //Analyze ListToBeAnalyze
             Match MatchFromValidation = RegexPatterns.Answer().Match(ValidationSplited[i]);
-            var SameFileandTypeList = ListToBeAnalyze.Where(x => x.Contains($"{MatchFromValidation.Groups[1].Value}\t{MatchFromValidation.Groups[2].Value}")).ToArray();
+            string[] SameFileandTypeList = ListToBeAnalyze.Where(x => x.Contains($"{MatchFromValidation.Groups[1].Value}\t{MatchFromValidation.Groups[2].Value}")).ToArray();
             foreach (string item in SameFileandTypeList)
             {
                 Match mt = RegexPatterns.Answer().Match(item);
+                string FilenameFromOutput = mt.Groups[1].Value.Trim();
+                string FilenameFromValidation = MatchFromValidation.Groups[1].Value.Trim();
                 //Make sure it's same file, eg: 10
-                if (mt.Groups[1].Value.Trim().Equals(MatchFromValidation.Groups[1].Value.Trim()))
+                if (FilenameFromOutput.Equals(FilenameFromValidation))
                 {
                     Match ValidationTimeRegex = RegexPatterns.ValidationTime().Match(MatchFromValidation.Groups[5].Value.Trim());
+                    Console.WriteLine(ValidationTimeRegex.Value);
                     //Check if it's a date or time
                     if (ValidationTimeRegex.Success)
                     {
@@ -847,6 +870,7 @@ internal partial class Program
                         bool IsNormalizedValueSame = TimeRegex.Groups[2].Value.Trim() != ValidationTimeRegex.Groups[2].Value.Trim();
                         if ((IsStartIndexSame | IsEndIndexSame) && (IsValueSame | IsNormalizedValueSame))
                         {
+                            Console.WriteLine(ValidationTimeRegex.Value);
                             if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
                             {
                                 MismatchList.Add((item, MatchFromValidation.Groups[5].Value.Trim()));
@@ -867,7 +891,6 @@ internal partial class Program
                         }
                     }
                 }
-
             }
         }
 
