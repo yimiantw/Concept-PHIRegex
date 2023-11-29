@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -754,7 +755,7 @@ internal partial class Program
         string[] ValidationSplited = string.Join("\n", LoadedValidationFiles).Split("\n").Where(x => !string.IsNullOrEmpty(x)).Select(x => x).ToArray();
         string[] OutputSplited = string.Join("\n", opt).Split("\n").Where(x => !string.IsNullOrEmpty(x)).Select(x => x).ToArray();
         List<string> ValidatedList = []; //For all validated answers
-        List<string> MismatchList = []; //For all mismatched answers (from output)
+        List<(string OriginalValue, string CorrectValue)> MismatchList = []; //For all mismatched answers (from output)
         List<string> MissingList = []; //For all missing answers (from answer)
         List<string> ListToBeAnalyze = [.. OutputSplited]; //From OutputSplited, items left here will be analyzed further.
 
@@ -797,9 +798,9 @@ internal partial class Program
                         bool IsNormalizedValueSame = TimeRegex.Groups[2].Value.Trim() != ValidationTimeRegex.Groups[2].Value.Trim();
                         if ((IsStartIndexSame | IsEndIndexSame) && (IsValueSame | IsNormalizedValueSame))
                         {
-                            if (!MismatchList.Contains(item))
+                            if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
                             {
-                                MismatchList.Add(item);
+                                MismatchList.Add((item, MatchFromValidation.Groups[5].Value.Trim()));
                                 ListToBeAnalyze.Remove(item);
                             }
                         }
@@ -809,9 +810,9 @@ internal partial class Program
                         if (mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim() 
                             | mt.Groups[4].Value.Trim() == MatchFromValidation.Groups[4].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim())
                         {
-                            if (!MismatchList.Contains(item))
+                            if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
                             {
-                                MismatchList.Add(item);
+                                MismatchList.Add((item, MatchFromValidation.Groups[5].Value.Trim()));
                                 ListToBeAnalyze.Remove(item);
                             }
                         }
@@ -827,7 +828,7 @@ internal partial class Program
         {
             Console.Clear();
             //Get filename
-            Match Mismatched = RegexPatterns.Answer().Match(MismatchList[i]);
+            Match Mismatched = RegexPatterns.Answer().Match(MismatchList[i].OriginalValue);
             Console.WriteLine("Generating missing values list... This may take a while...");
             Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", Mismatched.Groups[1].Value, i, MismatchList.Count, Math.Round((double)i / (double)MismatchList.Count * 100, 2));
             foreach (string item2 in MissingList.ToArray())
@@ -881,7 +882,7 @@ internal partial class Program
                     ? string.Format("Mismatch entries: {0}", MismatchList.Count) 
                     : string.Format("Missing entries: {0}", MissingList.Count));
                 sw.WriteLine("======================================================================");
-                sw.WriteLine(string.Join('\n', i is 2 ? MismatchList : MissingList).Trim());
+                sw.WriteLine(string.Join('\n', i is 2 ? MismatchList.Select(x => $"{x.OriginalValue}\n| Correct => {x.CorrectValue}") : MissingList).Trim());
             }
             sw.Close();
         }
