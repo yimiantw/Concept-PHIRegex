@@ -82,3 +82,21 @@ jobs:
       with:
         name: MacOS (x64, Intel and Apple Silicon)
         path: ${{ env.OUTPUT_DIR }}/publish
+
+  MacOS-x64-NoAOT:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore -r osx-x64 /p:PublishReadyToRun=true
+    - name: Publish
+      run: dotnet publish --no-restore -f net8.0 -c Release -p:OutputPath=${{ env.OUTPUT_DIR }}/ -p:PublishProfile=${{ env.PUBLISHXML_PATH }} -p:MyRuntimeIdentifier=osx-x64 -p:PublishAot=false /p:PublishSingleFile=true
+    - uses: actions/upload-artifact@v3
+      with:
+        name: MacOS (x64, Not Native AOT compiled)
+        path: ${{ env.OUTPUT_DIR }}/publish
+
