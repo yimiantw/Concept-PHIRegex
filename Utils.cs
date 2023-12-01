@@ -31,6 +31,18 @@ internal class Utils
             { "twenty", "20" },
         }.ToFrozenDictionary();
 
+    internal static (bool Enabled, string ValidateFile, string SourceFile) CheckValidateMode()
+    {
+        string[] CommandArgs = Environment.GetCommandLineArgs();
+        if ((CommandArgs.Contains("-V") && CommandArgs.Contains("-S"))
+            | (CommandArgs.Contains("--validate") && CommandArgs.Contains("--source")))
+        {
+            int IndexOfValidateFile = Array.FindIndex(CommandArgs, x => x.Contains("-V") | x.Contains("--validate")) + 1;
+            int IndexOfValidateSourceFile = Array.FindIndex(CommandArgs, x => x.Contains("-S") | x.Contains("--source")) + 1;
+            return (true, CommandArgs[IndexOfValidateFile], CommandArgs[IndexOfValidateSourceFile]);
+        }
+        return (false, string.Empty, string.Empty);
+    }
 
     internal static string GetAssemblyResource(string ResourceName)
     {

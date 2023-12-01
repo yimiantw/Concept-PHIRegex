@@ -7,15 +7,19 @@ namespace ConceptPHIRegex;
 internal partial class Program
 {
     #region Main Entry
-    static void Main()
+    static void Main(string[] args)
     {
-        while (true)
+        try
         {
-            //Read config
-            Config.ReadConfig();
-
-            try
+            (bool ValidateEnabled, string ValidateFile, string SourceFile) = Utils.CheckValidateMode();
+            #region Normal mode
+            if (!ValidateEnabled)
             {
+                while (true)
+                {
+                    //Read config
+                    Config.ReadConfig();
+
 #if !DEBUG
                 string InputPath = GetConsoleInput();
                 string[] FilesArray = [];
@@ -44,99 +48,124 @@ internal partial class Program
                 Config.AppConfig.PreviousLocation = InputPath;
             Config.WriteConfig();
 #else
-                //string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Second_Phase", "*.txt", SearchOption.TopDirectoryOnly);
-                string[] FilesArray = [@"D:\Test\DataSets\First_Phase\103.txt"];
-                Config.AppConfig.ValidateFileLocations = new string[]
-                {
-                    @"D:\Test\DataSets\first_answer.txt",
-                    @"D:\Test\DataSets\second_answer.txt"
-                };
+                    string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Mixed", "*.txt", SearchOption.TopDirectoryOnly);
+                    //string[] FilesArray = [@"D:\Test\DataSets\First_Phase\103.txt"];
+                    //Config.AppConfig.ValidateFileLocations = new string[]
+                    //{
+                    //    @"D:\Test\DataSets\first_answer.txt",
+                    //    @"D:\Test\DataSets\second_answer.txt"
+                    //};
+                    Config.AppConfig.ValidateFileLocations = new string[]
+                    {
+                    @"D:\Test\DataSets\answer_DL.txt"
+                    };
 
-                foreach (string FilePath in FilesArray.Where(x => !Path.Exists(x)))
+                    foreach (string FilePath in FilesArray.Where(x => !Path.Exists(x)))
+                    {
+                        Console.WriteLine("File: {0} is not exist, please check the \"FilesArray\" variable in the source code", FilePath);
+                        Console.WriteLine("Press any key to exit...");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+#endif
+                    //Check validation files
+                    if (Config.AppConfig.ValidateFileLocations.Any())
+                    {
+                        Console.WriteLine("{0} validation files detected, which are: {1}",
+                                            Config.AppConfig.ValidateFileLocations.Count(),
+                                            string.Join(',', Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x))));
+                    }
+
+                    //Calcuate process time
+                    Stopwatch ProcessTime = new();
+                    ProcessTime.Start();
+                    Console.Title = "Processing data...";
+
+                    //Initialize data class
+                    List<PHIData> List_PHIData = [];
+                    List<string> opt = [];
+
+                    for (int i = 0; i < FilesArray.Length; i++)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("Processing data...Please don't close the window");
+                        Console.WriteLine("Mode: {0}", Config.AppConfig.CustomRegex.Enabled ? "Custom Regex pattern from config" : "Regex from the program supplies");
+                        Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
+
+                        using StreamReader sr = new(FilesArray[i]);
+                        string RawData = sr.ReadToEnd();
+                        sr.Close();
+                        string Filename = Path.GetFileNameWithoutExtension(FilesArray[i]);
+                        PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled
+                                                    ? ProcessRegexWithCustomPattern(RawData)
+                                                    : ProcessRegexFromRawData(RawData);
+                        List_PHIData.Add(ProcessedData);
+                        opt.Add(GenerateOutput(Filename, ProcessedData));
+                    }
+
+                    //Display processed time
+                    Console.WriteLine("Done!");
+                    ProcessTime.Stop();
+                    Console.Title = "Done!";
+                    Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Length, ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
+
+                    // Write results into text file
+                    string SaveLocation = !string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
+                                            ? Config.AppConfig.SaveLocation
+                                            : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
+                    StreamWriter sw = new(SaveLocation);
+                    sw.WriteLine(string.Join("\r\n", opt.Where(x => x.Length > 0).Select(x => x)));
+                    sw.Close();
+                    //Ask user whether want to open the result file
+                    Console.WriteLine(Config.AppConfig.ValidateFileLocations.Any()
+                                        ? "The results are saved to {0}, \npress [Y] key open the file, [V] key validate the result, [M] key return to main menu OR any key to close."
+                                        : "The results are saved to {0}, \npress [Y] key open the file, [M] key return to main menu OR any key to close.", SaveLocation);
+
+                    //Do things based on the key pressed
+                    switch (Console.ReadKey().Key)
+                    {
+                        case ConsoleKey.Y:
+                            {
+                                Utils.OpenEditor(!string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
+                                                    ? SaveLocation
+                                                    : AppContext.BaseDirectory + Config.AppConfig.SaveFilename);
+                                break;
+                            }
+                        case ConsoleKey.V:
+                            if (Config.AppConfig.ValidateFileLocations.Any())
+                            {
+                                ValidateResults(opt, Config.AppConfig.ValidateFileLocations.Where(Path.Exists));
+                            }
+                            break;
+                        case ConsoleKey.M:
+                            Console.Beep();
+                            break;
+                        default:
+                            Environment.Exit(0);
+                            break;
+                    }
+
+                }
+            }
+            #endregion
+            #region Validation mode
+            else
+            {
+                Console.WriteLine($"Validation only mode is Enabled\nThe file will be analyzed: {ValidateFile}\nValidation source(s): {SourceFile}");
+                Console.WriteLine("Press any key to start validation process...");
+
+                string[] SourceFileSplited = SourceFile.Split(',').Select(x => x.Trim()).ToArray();
+                if (!File.Exists(ValidateFile) | (SourceFileSplited.Where(File.Exists).Count() != SourceFileSplited.Length))
                 {
-                    Console.WriteLine("File: {0} is not exist, please check the \"FilesArray\" variable in the source code", FilePath);
-                    Console.WriteLine("Press any key to exit...");
+                    Console.WriteLine("\nInput path is not exist.\nPress any key to exit...");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
-#endif
-                //Check validation files
-                if (Config.AppConfig.ValidateFileLocations.Any())
-                {
-                    Console.WriteLine("{0} validation files detected, which are: {1}",
-                                        Config.AppConfig.ValidateFileLocations.Count(),
-                                        string.Join(',', Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x))));
-                }
-
-                //Calcuate process time
-                Stopwatch ProcessTime = new();
-                ProcessTime.Start();
-                Console.Title = "Processing data...";
-
-                //Initialize data class
-                List<PHIData> List_PHIData = [];
-                List<string> opt = [];
-
-                for (int i = 0; i < FilesArray.Length; i++)
-                {
-                    Console.Clear();
-                    Console.WriteLine("Processing data...Please don't close the window");
-                    Console.WriteLine("Mode: {0}", Config.AppConfig.CustomRegex.Enabled ? "Custom Regex pattern from config" : "Regex from the program supplies");
-                    Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
-
-                    using StreamReader sr = new(FilesArray[i]);
-                    string RawData = sr.ReadToEnd();
-                    sr.Close();
-                    string Filename = Path.GetFileNameWithoutExtension(FilesArray[i]);
-                    PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled
-                                                ? ProcessRegexWithCustomPattern(RawData)
-                                                : ProcessRegexFromRawData(RawData);
-                    List_PHIData.Add(ProcessedData);
-                    opt.Add(GenerateOutput(Filename, ProcessedData));
-                }
-
-                //Display processed time
-                Console.WriteLine("Done!");
-                ProcessTime.Stop();
-                Console.Title = "Done!";
-                Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Length, ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
-
-                // Write results into text file
-                string SaveLocation = !string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
-                                        ? Config.AppConfig.SaveLocation
-                                        : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
-                StreamWriter sw = new(SaveLocation);
-                sw.WriteLine(string.Join("\r\n", opt.Where(x => x.Length > 0).Select(x => x)));
-                sw.Close();
-                //Ask user whether want to open the result file
-                Console.WriteLine(Config.AppConfig.ValidateFileLocations.Any()
-                                    ? "The results are saved to {0}, \npress [Y] key open the file, [V] key validate the result, [M] key return to main menu OR any key to close."
-                                    : "The results are saved to {0}, \npress [Y] key open the file, [M] key return to main menu OR any key to close.", SaveLocation);
-
-                //Do things based on the key pressed
-                switch (Console.ReadKey().Key)
-                {
-                    case ConsoleKey.Y:
-                        {
-                            Utils.OpenEditor(!string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
-                                                ? SaveLocation
-                                                : AppContext.BaseDirectory + Config.AppConfig.SaveFilename);
-                            break;
-                        }
-                    case ConsoleKey.V:
-                        if (Config.AppConfig.ValidateFileLocations.Any())
-                        {
-                            ValidateResults(opt);
-                        }
-                        break;
-                    case ConsoleKey.M:
-                        Console.Beep();
-                        break;
-                    default:
-                        Environment.Exit(0);
-                        break;
-                }
+                ValidateResults([.. File.ReadAllLines(ValidateFile)], SourceFileSplited);
             }
+            #endregion
+
+        }
 #if !DEBUG
             catch (Exception ex)
             {
@@ -145,11 +174,10 @@ internal partial class Program
                 Console.WriteLine("Press any to exit the program throw the debug info into IDE.");
                 Console.ReadKey();
 #else
-            catch (Exception)
-            {
+        catch (Exception)
+        {
 #endif
-                throw;
-            }
+            throw;
         }
     }
     #endregion
@@ -348,7 +376,7 @@ internal partial class Program
                 Data.Country.Add(new()
                 {
                     Value = TrimmedValue,
-                    StartIndex = RawData.IndexOf(TrimmedValue), 
+                    StartIndex = RawData.IndexOf(TrimmedValue),
                     EndIndex = RawData.IndexOf(TrimmedValue) + TrimmedValue.Length
                 });
             }
@@ -744,9 +772,9 @@ internal partial class Program
             (Data.IDs, "IDNUM"), (Data.MedicalRecord, "MEDICALRECORD"), (Data.Patient, "PATIENT"), (Data.Doctors, "DOCTOR"),
             (Data.Username, "USERNAME"), (Data.Profession, "PROFESSION"), (Data.Department, "DEPARTMENT"), (Data.Hospital, "HOSPITAL"),
             (Data.Orgainzations, "ORGANIZATION"), (Data.Street, "STREET"), (Data.City, "CITY"), (Data.State, "STATE"),
-            (Data.Country, "COUNTRY"), (Data.Zip, "ZIP"), (Data.LocationOther, "LOCATION-OTHER"), (Data.Age, "AGE"), 
-            (Data.Dates, "DATE"), (Data.Times, "TIME"), (Data.Durations, "DURATION"), (Data.Sets, "SET"), 
-            (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), (Data.URL, "URL"), 
+            (Data.Country, "COUNTRY"), (Data.Zip, "ZIP"), (Data.LocationOther, "LOCATION-OTHER"), (Data.Age, "AGE"),
+            (Data.Dates, "DATE"), (Data.Times, "TIME"), (Data.Durations, "DURATION"), (Data.Sets, "SET"),
+            (Data.Phone, "PHONE"), (Data.Fax, "FAX"), (Data.Email, "EMAIL"), (Data.URL, "URL"),
             (Data.IPAddr, "IPADDR"),
         };
 
@@ -787,13 +815,13 @@ internal partial class Program
     #endregion
 
     #region ValidateResults
-    private static void ValidateResults(List<string> opt)
+    private static void ValidateResults(List<string> opt, IEnumerable<string> ValidationSource)
     {
         Console.Title = "Validating data...";
 
         //Read all validation files
         List<string> LoadedValidationFiles = [];
-        foreach (string FilePath in Config.AppConfig.ValidateFileLocations.Where(Path.Exists))
+        foreach (string FilePath in ValidationSource)
         {
             using StreamReader sr = new(FilePath);
             LoadedValidationFiles.Add(sr.ReadToEnd());
@@ -810,27 +838,29 @@ internal partial class Program
 
         for (int i = 0; i < ValidationSplited.Length; i++)
         {
+            string CurrentItem = ValidationSplited[i];
+            Match RegexOfCurrentItem = RegexPatterns.Answer().Match(CurrentItem);
             //Get filename
-            string FilenameInCurrentLine = RegexPatterns.Answer().Match(ValidationSplited[i]).Groups[1].Value;
+            string FilenameInCurrentLine = RegexOfCurrentItem.Groups[1].Value;
 
             //Display message
             Console.Clear();
             Console.WriteLine("Processing validation data... This may take a while...");
             Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", FilenameInCurrentLine, i, ValidationSplited.Length, Math.Round((double)i / (double)ValidationSplited.Length * 100, 2));
 
-            string CurrentItem = ValidationSplited[i];
-            Match RegexOfCurrentItem = RegexPatterns.Answer().Match(CurrentItem);
-            //Check whether the output has the same item from answer.txt
-            if (OutputSplited.Contains(CurrentItem))
+            string PHIType = RegexOfCurrentItem.Groups[2].Value.Trim();
+            string PHIStartIndex = RegexOfCurrentItem.Groups[3].Value.Trim();
+            string PHIEndIndex = RegexOfCurrentItem.Groups[4].Value.Trim();
+            string PHIValue = RegexOfCurrentItem.Groups[5].Value.Trim();
+            if (OutputSplited.Any(x => x.Contains($"{FilenameInCurrentLine}\t{PHIType}\t{PHIStartIndex}\t{PHIEndIndex}\t{PHIValue}")))
             {
                 //Add to validated list
                 ValidatedList.Add(CurrentItem);
                 //Remove the item from to be analyze list
                 ListToBeAnalyze.Remove(CurrentItem);
-
             }
 
-            if (RegexOfCurrentItem.Groups[2].Value.Equals("TIME"))
+            if (PHIType.Equals("TIME"))
             {
                 Match RegexOfValidItem = RegexPatterns.ValidationTime().Match(RegexOfCurrentItem.Groups[5].Value);
                 foreach (string item in OutputSplited)
@@ -859,7 +889,6 @@ internal partial class Program
                 if (FilenameFromOutput.Equals(FilenameFromValidation))
                 {
                     Match ValidationTimeRegex = RegexPatterns.ValidationTime().Match(MatchFromValidation.Groups[5].Value.Trim());
-                    Console.WriteLine(ValidationTimeRegex.Value);
                     //Check if it's a date or time
                     if (ValidationTimeRegex.Success)
                     {
@@ -870,7 +899,6 @@ internal partial class Program
                         bool IsNormalizedValueSame = TimeRegex.Groups[2].Value.Trim() != ValidationTimeRegex.Groups[2].Value.Trim();
                         if ((IsStartIndexSame | IsEndIndexSame) && (IsValueSame | IsNormalizedValueSame))
                         {
-                            Console.WriteLine(ValidationTimeRegex.Value);
                             if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
                             {
                                 MismatchList.Add((item, MatchFromValidation.Groups[5].Value.Trim()));
@@ -880,7 +908,7 @@ internal partial class Program
                     }
                     else //Nah, it's not a date or time
                     {
-                        if (mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim() 
+                        if (mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim()
                             | mt.Groups[4].Value.Trim() == MatchFromValidation.Groups[4].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim())
                         {
                             if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
@@ -922,10 +950,10 @@ internal partial class Program
         double HitRate = (double)ValidatedList.Count / (double)ValidationSplited.Length * 100;
 
         //Save validation result
-        (string Validation, string Mismatch, string Missing) Location = (!string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) 
-            ? "validated_answer.txt" : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt"), 
+        (string Validation, string Mismatch, string Missing) Location = (!string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
+            ? "validated_answer.txt" : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt"),
             !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "mismatch_answer.txt"
-                                  : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt"), 
+                                  : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt"),
                                   !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "missing_answer.txt"
                                             : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt"));
 
@@ -950,8 +978,8 @@ internal partial class Program
             }
             else
             {
-                sw.WriteLine(i is 2 
-                    ? string.Format("Mismatch entries: {0}", MismatchList.Count) 
+                sw.WriteLine(i is 2
+                    ? string.Format("Mismatch entries: {0}", MismatchList.Count)
                     : string.Format("Missing entries: {0}", MissingList.Count));
                 sw.WriteLine("======================================================================");
                 sw.WriteLine(string.Join('\n', i is 2 ? MismatchList.Select(x => $"{x.OriginalValue}\n| Correct => {x.CorrectValue}") : MissingList).Trim());
