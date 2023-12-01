@@ -840,19 +840,26 @@ internal partial class Program
         {
             string CurrentItem = ValidationSplited[i];
             Match RegexOfCurrentItem = RegexPatterns.Answer().Match(CurrentItem);
+
             //Get filename
-            string FilenameInCurrentLine = RegexOfCurrentItem.Groups[1].Value;
+            string CUR_Filename = RegexOfCurrentItem.Groups[1].Value;
+            string CUR_PHIType = RegexOfCurrentItem.Groups[2].Value.Trim();
+            string CUR_PHIStartIndex = RegexOfCurrentItem.Groups[3].Value.Trim();
+            string CUR_PHIEndIndex = RegexOfCurrentItem.Groups[4].Value.Trim();
+            string CUR_PHIValue = RegexOfCurrentItem.Groups[5].Value.Trim();
+            //For time
+            Match RegexOfValidTime = RegexPatterns.ValidationTime().Match(CUR_PHIValue);
+            string CUR_TimeValue = RegexOfValidTime.Groups[1].Value.Trim();
+            string CUR_NormalizedValue = RegexOfValidTime.Groups[2].Value.Trim();
 
             //Display message
+            double ProcessPercent = Math.Round((double)i / (double)ValidationSplited.Length * 100, 2);
             Console.Clear();
             Console.WriteLine("Processing validation data... This may take a while...");
-            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", FilenameInCurrentLine, i, ValidationSplited.Length, Math.Round((double)i / (double)ValidationSplited.Length * 100, 2));
+            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", CUR_Filename, i, ValidationSplited.Length, ProcessPercent);
 
-            string PHIType = RegexOfCurrentItem.Groups[2].Value.Trim();
-            string PHIStartIndex = RegexOfCurrentItem.Groups[3].Value.Trim();
-            string PHIEndIndex = RegexOfCurrentItem.Groups[4].Value.Trim();
-            string PHIValue = RegexOfCurrentItem.Groups[5].Value.Trim();
-            if (OutputSplited.Any(x => x.Contains($"{FilenameInCurrentLine}\t{PHIType}\t{PHIStartIndex}\t{PHIEndIndex}\t{PHIValue}")))
+            string PHIDataText = $"{CUR_Filename}\t{CUR_PHIType}\t{CUR_PHIStartIndex}\t{CUR_PHIEndIndex}\t{CUR_PHIValue}";
+            if (OutputSplited.Any(x => x.Contains(PHIDataText)))
             {
                 //Add to validated list
                 ValidatedList.Add(CurrentItem);
@@ -860,60 +867,68 @@ internal partial class Program
                 ListToBeAnalyze.Remove(CurrentItem);
             }
 
-            if (PHIType.Equals("TIME"))
+            if (CUR_PHIType.Equals("TIME"))
             {
-                Match RegexOfValidItem = RegexPatterns.ValidationTime().Match(RegexOfCurrentItem.Groups[5].Value);
                 foreach (string item in OutputSplited)
                 {
                     Match RegexOfOutput = RegexPatterns.Answer().Match(item);
-                    Match RegexOfOutputItem = RegexPatterns.ValidationTime().Match(RegexOfCurrentItem.Groups[5].Value);
-                    if (RegexOfOutput.Groups[1].Value.Equals(RegexOfCurrentItem.Groups[1].Value) && RegexOfOutput.Groups[2].Value.Equals(RegexOfCurrentItem.Groups[2].Value) && RegexOfOutput.Groups[3].Value.Equals(RegexOfCurrentItem.Groups[3].Value) && RegexOfOutput.Groups[4].Value.Equals(RegexOfCurrentItem.Groups[4].Value) && RegexOfValidItem.Groups[1].Value.Equals(RegexOfOutputItem.Groups[1].Value) && RegexOfValidItem.Groups[2].Value.Equals(RegexOfOutputItem.Groups[2].Value))
+                    Match RegexOfOutputTime = RegexPatterns.ValidationTime().Match(CUR_PHIValue);
+                    string OPT_Filename = RegexOfOutput.Groups[1].Value.Trim();
+                    string OPT_PHIType = RegexOfOutput.Groups[2].Value.Trim();
+                    string OPT_PHIStartIndex = RegexOfOutput.Groups[3].Value.Trim();
+                    string OPT_PHIEndIndex = RegexOfOutput.Groups[4].Value.Trim();
+                    string OPT_TimeValue = RegexOfOutputTime.Groups[1].Value.Trim();
+                    string OPT_NormalizedValue = RegexOfOutputTime.Groups[2].Value.Trim();
+                    if (OPT_Filename.Equals(CUR_Filename) && OPT_PHIType.Equals(CUR_PHIType) 
+                        && OPT_PHIStartIndex.Equals(CUR_PHIStartIndex) && OPT_PHIEndIndex.Equals(CUR_PHIEndIndex) 
+                        && CUR_TimeValue.Equals(OPT_TimeValue) && CUR_NormalizedValue.Equals(OPT_NormalizedValue))
                     {
-                        //Console.WriteLine(RegexOfOutput);
                         ValidatedList.Add(CurrentItem);
                         ListToBeAnalyze.Remove(CurrentItem);
-                        //Console.ReadKey();
                     }
                 }
             }
 
             //Analyze ListToBeAnalyze
-            Match MatchFromValidation = RegexPatterns.Answer().Match(ValidationSplited[i]);
-            string[] SameFileandTypeList = ListToBeAnalyze.Where(x => x.Contains($"{MatchFromValidation.Groups[1].Value}\t{MatchFromValidation.Groups[2].Value}")).ToArray();
+            string[] SameFileandTypeList = ListToBeAnalyze.Where(x => x.Contains($"{CUR_Filename}\t{CUR_PHIType}")).ToArray();
             foreach (string item in SameFileandTypeList)
             {
-                Match mt = RegexPatterns.Answer().Match(item);
-                string FilenameFromOutput = mt.Groups[1].Value.Trim();
-                string FilenameFromValidation = MatchFromValidation.Groups[1].Value.Trim();
+                Match RegexOfLeftItem = RegexPatterns.Answer().Match(item);
+                string Left_Filename = RegexOfLeftItem.Groups[1].Value.Trim();
+                string Left_PHIStartIndex = RegexOfLeftItem.Groups[3].Value.Trim();
+                string Left_PHIEndIndex = RegexOfLeftItem.Groups[4].Value.Trim();
+                string Left_PHIValue = RegexOfCurrentItem.Groups[5].Value.Trim();
                 //Make sure it's same file, eg: 10
-                if (FilenameFromOutput.Equals(FilenameFromValidation))
+                if (Left_Filename.Equals(CUR_Filename))
                 {
-                    Match ValidationTimeRegex = RegexPatterns.ValidationTime().Match(MatchFromValidation.Groups[5].Value.Trim());
+                    Match RegexOfLeftTime = RegexPatterns.ValidationTime().Match(Left_PHIValue);
+                    string Left_TimeValue = RegexOfLeftTime.Groups[1].Value.Trim();
+                    string Left_NormalizedValue = RegexOfLeftTime.Groups[2].Value.Trim();
                     //Check if it's a date or time
-                    if (ValidationTimeRegex.Success)
+                    if (RegexOfValidTime.Success)
                     {
-                        Match TimeRegex = RegexPatterns.ValidationTime().Match(mt.Groups[5].Value.Trim());
-                        bool IsStartIndexSame = mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim();
-                        bool IsEndIndexSame = mt.Groups[4].Value.Trim() == MatchFromValidation.Groups[4].Value.Trim();
-                        bool IsValueSame = TimeRegex.Groups[1].Value.Trim() != ValidationTimeRegex.Groups[1].Value.Trim();
-                        bool IsNormalizedValueSame = TimeRegex.Groups[2].Value.Trim() != ValidationTimeRegex.Groups[2].Value.Trim();
+                        bool IsStartIndexSame = Left_PHIStartIndex == CUR_PHIStartIndex; 
+                        bool IsEndIndexSame = Left_PHIEndIndex == CUR_PHIEndIndex;
+                        bool IsValueSame = Left_TimeValue != CUR_TimeValue;
+                        bool IsNormalizedValueSame = Left_NormalizedValue != CUR_NormalizedValue;
                         if ((IsStartIndexSame | IsEndIndexSame) && (IsValueSame | IsNormalizedValueSame))
                         {
-                            if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
+                            if (!MismatchList.Contains((item, CUR_PHIValue)))
                             {
-                                MismatchList.Add((item, MatchFromValidation.Groups[5].Value.Trim()));
+                                MismatchList.Add((item, CUR_PHIValue));
                                 ListToBeAnalyze.Remove(item);
                             }
                         }
                     }
                     else //Nah, it's not a date or time
                     {
-                        if (mt.Groups[3].Value.Trim() == MatchFromValidation.Groups[3].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim()
-                            | mt.Groups[4].Value.Trim() == MatchFromValidation.Groups[4].Value.Trim() && mt.Groups[5].Value.Trim() != MatchFromValidation.Groups[5].Value.Trim())
+                        bool IsValueSame = Left_PHIValue != CUR_PHIValue;
+                        if (Left_TimeValue == CUR_PHIStartIndex && IsValueSame
+                            | Left_NormalizedValue == CUR_PHIEndIndex && IsValueSame)
                         {
-                            if (!MismatchList.Contains((item, MatchFromValidation.Groups[5].Value.Trim())))
+                            if (!MismatchList.Contains((item, CUR_PHIValue)))
                             {
-                                MismatchList.Add((item, MatchFromValidation.Groups[5].Value.Trim()));
+                                MismatchList.Add((item, CUR_PHIValue));
                                 ListToBeAnalyze.Remove(item);
                             }
                         }
@@ -929,15 +944,20 @@ internal partial class Program
             Console.Clear();
             //Get filename
             Match Mismatched = RegexPatterns.Answer().Match(MismatchList[i].OriginalValue);
+            double ProcessPercent = Math.Round((double)i / (double)MismatchList.Count * 100, 2);
             Console.WriteLine("Generating missing values list... This may take a while...");
-            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", Mismatched.Groups[1].Value, i, MismatchList.Count, Math.Round((double)i / (double)MismatchList.Count * 100, 2));
+            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", Mismatched.Groups[1].Value, i, MismatchList.Count, ProcessPercent);
             foreach (string item2 in MissingList.ToArray())
             {
                 Match Missing = RegexPatterns.Answer().Match(item2);
+                bool IsFilenameSame = Mismatched.Groups[1].Value.Equals(Missing.Groups[1].Value);
+                bool IsTypeSame = Mismatched.Groups[2].Value.Equals(Missing.Groups[2].Value);
+                bool IsStartIndexSame = Mismatched.Groups[3].Value.Equals(Missing.Groups[3].Value);
+                bool IsEndIndexSame = Mismatched.Groups[4].Value.Equals(Missing.Groups[4].Value);
                 //Check filename, type
-                if (Mismatched.Groups[1].Value.Equals(Missing.Groups[1].Value) && Mismatched.Groups[2].Value.Equals(Missing.Groups[2].Value))
+                if (IsFilenameSame && IsTypeSame)
                 {
-                    if (Mismatched.Groups[3].Value.Equals(Missing.Groups[3].Value) | Mismatched.Groups[4].Value.Equals(Missing.Groups[4].Value))
+                    if (IsStartIndexSame | IsEndIndexSame)
                     {
                         MissingList.Remove(item2);
                     }
@@ -970,7 +990,7 @@ internal partial class Program
             sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
             if (i is 1)
             {
-                sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x)))));
+                sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", ValidationSource.Select(x => Path.GetFileName(x)))));
                 sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
                 sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
                 sw.WriteLine("======================================================================");
