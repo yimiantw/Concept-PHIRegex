@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -838,9 +837,11 @@ internal partial class Program
 
         for (int i = 0; i < ValidationSplited.Length; i++)
         {
-            string CurrentItem = ValidationSplited[i];
-            Match RegexOfCurrentItem = RegexPatterns.Answer().Match(CurrentItem);
+            //string CurrentItem = ValidationSplited[i];
+            string[] CUR_SplitedString = ValidationSplited[i].Split('\t');
+            string TrimmedPathString = $"{Path.GetFileName(CUR_SplitedString[0])}\t{CUR_SplitedString[1]}\t{CUR_SplitedString[2]}\t{CUR_SplitedString[3]}\t{CUR_SplitedString[4]}";
 
+            Match RegexOfCurrentItem = RegexPatterns.Answer().Match(TrimmedPathString);
             //Get filename
             string CUR_Filename = RegexOfCurrentItem.Groups[1].Value;
             string CUR_PHIType = RegexOfCurrentItem.Groups[2].Value.Trim();
@@ -862,9 +863,9 @@ internal partial class Program
             if (OutputSplited.Any(x => x.Contains(PHIDataText)))
             {
                 //Add to validated list
-                ValidatedList.Add(CurrentItem);
+                ValidatedList.Add(TrimmedPathString);
                 //Remove the item from to be analyze list
-                ListToBeAnalyze.Remove(CurrentItem);
+                ListToBeAnalyze.Remove(TrimmedPathString);
             }
 
             if (CUR_PHIType.Equals("TIME"))
@@ -883,8 +884,8 @@ internal partial class Program
                         && OPT_PHIStartIndex.Equals(CUR_PHIStartIndex) && OPT_PHIEndIndex.Equals(CUR_PHIEndIndex) 
                         && CUR_TimeValue.Equals(OPT_TimeValue) && CUR_NormalizedValue.Equals(OPT_NormalizedValue))
                     {
-                        ValidatedList.Add(CurrentItem);
-                        ListToBeAnalyze.Remove(CurrentItem);
+                        ValidatedList.Add(TrimmedPathString);
+                        ListToBeAnalyze.Remove(TrimmedPathString);
                     }
                 }
             }
