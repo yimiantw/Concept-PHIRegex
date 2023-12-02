@@ -6,6 +6,7 @@ internal class RegexData
     internal int StartIndex { get; set; } = 0;
     internal int EndIndex { get; set; } = 0;
     internal string FromPattern { get; set; } = string.Empty;
+    internal string NormalizedValue { get; set; } = string.Empty;
 }
 
 internal class PHIData

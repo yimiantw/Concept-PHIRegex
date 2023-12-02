@@ -15,7 +15,7 @@ internal partial class RegexPatterns
     [GeneratedRegex(@"^[A-Za-z]{2,}\s?[A-Za-z]{2,},\s?[A-Za-z]{2,}\s?[A-Za-z]+", RegexOptions.Multiline)]
     internal static partial Regex Patient();
 
-    [GeneratedRegex(@"(?:Dr|DR|PRO)[\s?|.]\s?([A-Z]+\s?.?\s?\w+?\s?\w+(?:\s\w{3,})?)")]
+    [GeneratedRegex(@"(?:Dr|DR|PRO)[\s?|.]\s?([A-Z]+\s?.?\s?\w+?\s?\w+(?:\s\w{3,})?(?:-[A-Z]+)?)")]
     internal static partial Regex DoctorVariantOne();
     [GeneratedRegex(@"^\w+:\s+\(([A-Z]+\s+\w+)\)", RegexOptions.Multiline)]
     internal static partial Regex DoctorVariantTwo();
@@ -68,6 +68,15 @@ internal partial class RegexPatterns
     #region PHI: Date
     [GeneratedRegex(@"(?:(\d{3,4})Hrs\s{1}on\s)?(\d{1,2}[/|\.]\d{1,2}[/|\.]\d{2,4})(?:\s{1}at\s{1}(\d{1,2}:\d{2}))?")]
     internal static partial Regex DateAndTime();
+
+    [GeneratedRegex(@"([0-9]{1,2}:?[0-9]{1,2})(?:[H|h]rs)\s?(?:on|at)\s?([0-9]{1,2}[.|/][0-9]{1,2}[.|/][0-9]{1,2})")]
+    internal static partial Regex TimeVariantOne();
+    [GeneratedRegex(@"(?:at\s)?([0-9]{1,2}[\.|:][0-9]{1,2})(?:am|pm)?\s?(?:on)?\s?([0-9]{1,2}[.|/][0-9]{1,2}[.|/][0-9]{1,2})")]
+    internal static partial Regex TimeVariantTwo();
+    [GeneratedRegex(@"([0-9]{1,2}[.|/][0-9]{1,2}[.|/][0-9]{2,4})\s?(?:at|on)\s?([0-9]{1,2}[:|.][0-9]{1,2})(?:am|pm)?")]
+    internal static partial Regex TimeVariantThree();
+    [GeneratedRegex(@"([0-9]{2})-([A-Za-z]{3})-([0-9]{2,4})")]
+    internal static partial Regex DateVariantOne();
 
     [GeneratedRegex(@"(?:((?:\d{1,3}|\w{3,}))\s?(?i)((?:(?:week|wk)|(?:year|yr)|month|day|time|(?:hour|hr)|(?:minute|min)|(?:second|sec))(?:s)?))")]
     internal static partial Regex Duration();

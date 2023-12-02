@@ -8,28 +8,44 @@ namespace ConceptPHIRegex;
 internal class Utils
 {
     internal static FrozenDictionary<string, string> NumberDigit = new Dictionary<string, string>()
-        {
-            { "one", "1" },
-            { "two", "2" },
-            { "three", "3" },
-            { "four", "4" },
-            { "five", "5" },
-            { "six", "6" },
-            { "seven", "7" },
-            { "eight", "8" },
-            { "nine", "9" },
-            { "ten", "10" },
-            { "eleven", "11" },
-            { "twelve", "12" },
-            { "thirteen", "13" },
-            { "fourteen", "14" },
-            { "fifteen", "15" },
-            { "sixteen", "16" },
-            { "seventeen", "17" },
-            { "eighteen", "18" },
-            { "nineteen", "19" },
-            { "twenty", "20" },
-        }.ToFrozenDictionary();
+    {
+        { "one", "1" },
+        { "two", "2" },
+        { "three", "3" },
+        { "four", "4" },
+        { "five", "5" },
+        { "six", "6" },
+        { "seven", "7" },
+        { "eight", "8" },
+        { "nine", "9" },
+        { "ten", "10" },
+        { "eleven", "11" },
+        { "twelve", "12" },
+        { "thirteen", "13" },
+        { "fourteen", "14" },
+        { "fifteen", "15" },
+        { "sixteen", "16" },
+        { "seventeen", "17" },
+        { "eighteen", "18" },
+        { "nineteen", "19" },
+        { "twenty", "20" }
+    }.ToFrozenDictionary();
+
+    internal static FrozenDictionary<string, string> MonthsDigit = new Dictionary<string, string>()
+    {
+        { "JAN", "1" },
+        { "FEB", "2" },
+        { "MAR", "3" },
+        { "APR", "4" },
+        { "MAY", "5" },
+        { "JUN", "6" },
+        { "JUL", "7" },
+        { "AUG", "8" },
+        { "SEP", "9" },
+        { "OCT", "10" },
+        { "NOV", "11" },
+        { "DEC", "12" }
+    }.ToFrozenDictionary();
 
     internal static (bool Enabled, string ValidateFile, string SourceFile) CheckValidateMode()
     {
@@ -43,6 +59,10 @@ internal class Utils
         }
         return (false, string.Empty, string.Empty);
     }
+    
+    internal static bool IsSpecialToken(string Value)
+    => Value.Equals("DATE", StringComparison.Ordinal) | Value.Equals("TIME", StringComparison.Ordinal)
+        | Value.Equals("DURATION") | Value.Equals("SET", StringComparison.Ordinal);
 
     internal static string GetAssemblyResource(string ResourceName)
     {

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Data.SqlTypes;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -49,15 +52,15 @@ internal partial class Program
 #else
                     string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Mixed", "*.txt", SearchOption.TopDirectoryOnly);
                     //string[] FilesArray = [@"D:\Test\DataSets\First_Phase\103.txt"];
-                    //Config.AppConfig.ValidateFileLocations = new string[]
-                    //{
-                    //    @"D:\Test\DataSets\first_answer.txt",
-                    //    @"D:\Test\DataSets\second_answer.txt"
-                    //};
                     Config.AppConfig.ValidateFileLocations = new string[]
                     {
-                    @"D:\Test\DataSets\answer_DL.txt"
+                        @"D:\Test\DataSets\first_answer.txt",
+                        @"D:\Test\DataSets\second_answer.txt"
                     };
+                    //Config.AppConfig.ValidateFileLocations = new string[]
+                    //{
+                    //    @"D:\Test\DataSets\answer_DL.txt"
+                    //};
 
                     foreach (string FilePath in FilesArray.Where(x => !Path.Exists(x)))
                     {
@@ -89,7 +92,7 @@ internal partial class Program
                         Console.Clear();
                         Console.WriteLine("Processing data...Please don't close the window");
                         Console.WriteLine("Mode: {0}", Config.AppConfig.CustomRegex.Enabled ? "Custom Regex pattern from config" : "Regex from the program supplies");
-                        Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
+                        Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length - 1, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
 
                         using StreamReader sr = new(FilesArray[i]);
                         string RawData = sr.ReadToEnd();
@@ -383,6 +386,111 @@ internal partial class Program
         #endregion
 
         #region Match: Date & Time
+        //Time
+        MatchCollection Regex_TimeVariantOne = RegexPatterns.TimeVariantOne().Matches(RawData);
+        if (Regex_TimeVariantOne.Count > 0)
+        {
+            foreach (Match MatchTime in Regex_TimeVariantOne.Cast<Match>())
+            {
+                string[] DateSplited = MatchTime.Groups[2].Value.Contains('/') 
+                                        ? MatchTime.Groups[2].Value.Split('/')
+                                        : MatchTime.Groups[2].Value.Split('.');
+                string ReplacedString = MatchTime.Groups[1].Value.Replace(":", string.Empty);
+                string Hour = ReplacedString[..2];
+                string Minute = ReplacedString[2..];
+                string FT_Date_Month = DateSplited[1].Length is 1 ? $"0{DateSplited[1]}" : DateSplited[1];
+                string FT_Date_Day = DateSplited[0].Length is 1 ? $"0{DateSplited[0]}" : DateSplited[0];
+                string FT_Date_Year = DateSplited[2].Length is 2 ? $"20{DateSplited[2]}" : DateSplited[2];
+                string FT_Date = $"{FT_Date_Year}-{FT_Date_Month}-{FT_Date_Day}";
+                string FT_Time_Minute = Minute.Length is 1 ? $"{Minute}0" : Minute;
+                FT_Time_Minute = Minute.Length < 1 ? "00" : FT_Time_Minute;
+                string FT_Time = $"T{Hour}:{FT_Time_Minute}";
+                string FT_Full = FT_Date.Trim() + FT_Time.Trim();
+                Data.Times.Add(new()
+                {
+                    Value = MatchTime.Value.Trim(),
+                    StartIndex = MatchTime.Index,
+                    EndIndex = MatchTime.Index + MatchTime.Length,
+                    NormalizedValue = $"_{FT_Date + FT_Time}".Trim()
+                });
+            }
+        }
+        MatchCollection Regex_TimeVariantTwo = RegexPatterns.TimeVariantTwo().Matches(RawData);
+        if (Regex_TimeVariantTwo.Count > 0)
+        {
+            foreach (Match MatchTime in Regex_TimeVariantTwo.Cast<Match>())
+            {
+                string[] DateSplited = MatchTime.Groups[2].Value.Contains('/')
+                                        ? MatchTime.Groups[2].Value.Split('/')
+                                        : MatchTime.Groups[2].Value.Split('.');
+                string ReplacedString = MatchTime.Groups[1].Value.Replace(":", string.Empty).Replace(".", string.Empty);
+                string Hour = ReplacedString.Length is 4 ? ReplacedString[..2] : ReplacedString[..1];
+                string Minute = ReplacedString.Length is 4 ? ReplacedString[2..] : ReplacedString[1..];
+                string FT_Date_Month = DateSplited[1].Length is 1 ? $"0{DateSplited[1]}" : DateSplited[1];
+                string FT_Date_Day = DateSplited[0].Length is 1 ? $"0{DateSplited[0]}" : DateSplited[0];
+                string FT_Date_Year = DateSplited[2].Length is 2 ? $"20{DateSplited[2]}" : DateSplited[2];
+                string FT_Date = $"{FT_Date_Year.Trim()}-{FT_Date_Month.Trim()}-{FT_Date_Day.Trim()}";
+
+                string FT_Time_Hour = Hour.Length is 1 ? $"0{Hour}" : Hour;
+                string FT_Time = $"T{FT_Time_Hour.Trim()}:{Minute.Trim()}";
+                Data.Times.Add(new()
+                {
+                    Value = MatchTime.Value.Trim(),
+                    StartIndex = MatchTime.Index,
+                    EndIndex = MatchTime.Index + MatchTime.Length,
+                    NormalizedValue = $"_{FT_Date + FT_Time}".Trim()
+                });
+            }
+        }
+        MatchCollection Regex_TimeVariantThree = RegexPatterns.TimeVariantThree().Matches(RawData);
+        if (Regex_TimeVariantThree.Count > 0)
+        {
+            foreach (Match MatchTime in Regex_TimeVariantThree.Cast<Match>())
+            {
+                string[] DateSplited = MatchTime.Groups[1].Value.Contains('/')
+                                        ? MatchTime.Groups[1].Value.Split('/')
+                                        : MatchTime.Groups[1].Value.Split('.');
+                string ReplacedString = MatchTime.Groups[2].Value.Replace(":", string.Empty).Replace(".", string.Empty);
+                string Hour = ReplacedString.Length is 4 ? ReplacedString[..2] : ReplacedString[..1];
+                string Minute = ReplacedString.Length is 4 ? ReplacedString[2..] : ReplacedString[1..];
+                string FT_Date_Month = DateSplited[1].Length is 1 ? $"0{DateSplited[1]}" : DateSplited[1];
+                string FT_Date_Day = DateSplited[0].Length is 1 ? $"0{DateSplited[0]}" : DateSplited[0];
+                string FT_Date_Year = DateSplited[2].Length is 2 ? $"20{DateSplited[2]}" : DateSplited[2];
+                string FT_Date = $"{FT_Date_Year.Trim()}-{FT_Date_Month.Trim()}-{FT_Date_Day.Trim()}";
+
+                string FT_Time_Hour = Hour.Length is 1 ? $"0{Hour}" : Hour;
+                string FT_Time = $"T{FT_Time_Hour.Trim()}:{Minute.Trim()}";
+                Data.Times.Add(new()
+                {
+                    Value = MatchTime.Value.Trim(),
+                    StartIndex = MatchTime.Index,
+                    EndIndex = MatchTime.Index + MatchTime.Length,
+                    NormalizedValue = $"_{FT_Date + FT_Time}".Trim()
+                });
+            }
+        }
+        
+        //Date
+        MatchCollection Regex_DateVariantOne = RegexPatterns.DateVariantOne().Matches(RawData);
+        if (Regex_DateVariantOne.Count > 0)
+        {
+            foreach (Match item in Regex_DateVariantOne.Cast<Match>())
+            {
+                string Year = item.Groups[3].Value;
+                Year = Year.Length is 2 ? $"20{Year}" : Year;
+                string Month = Utils.MonthsDigit[item.Groups[2].Value.ToUpper()];
+                string Day = item.Groups[1].Value;
+                string Full = $"{Year}-{Month}-{Day}";
+                Data.Dates.Add(new()
+                {
+                    Value = item.Value.Trim(),
+                    StartIndex = item.Index,
+                    EndIndex = item.Index + Full.Length,
+                    NormalizedValue = Full.Trim()
+                });
+            }
+        }
+
         MatchCollection Regex_DateAndTime = RegexPatterns.DateAndTime().Matches(RawData);
         if (Regex_DateAndTime.Count > 0)
         {
@@ -390,21 +498,27 @@ internal partial class Program
             IEnumerable<string> Times = Regex_DateAndTime.Where(x => !Dates.Contains(x.Value)).Select(x => x.Value);
             foreach (string MatchDate in Dates)
             {
-                Data.Dates.Add(new()
+                if (!Data.Times.Any(x => x.Value.Contains(MatchDate)))
                 {
-                    Value = MatchDate,
-                    StartIndex = RawData.IndexOf(MatchDate),
-                    EndIndex = RawData.IndexOf(MatchDate) + MatchDate.Length,
-                });
+                    Data.Dates.Add(new()
+                    {
+                        Value = MatchDate,
+                        StartIndex = RawData.IndexOf(MatchDate),
+                        EndIndex = RawData.IndexOf(MatchDate) + MatchDate.Length,
+                    });
+                }
             }
             foreach (string MatchTime in Times)
             {
-                Data.Times.Add(new()
+                if (!Data.Times.Any(x => x.Value.Contains(MatchTime)))
                 {
-                    Value = MatchTime,
-                    StartIndex = RawData.IndexOf(MatchTime),
-                    EndIndex = RawData.IndexOf(MatchTime) + MatchTime.Length,
-                });
+                    Data.Times.Add(new()
+                    {
+                        Value = MatchTime,
+                        StartIndex = RawData.IndexOf(MatchTime),
+                        EndIndex = RawData.IndexOf(MatchTime) + MatchTime.Length,
+                    });
+                }
             }
         }
         #endregion
@@ -787,16 +901,23 @@ internal partial class Program
                 {
                     if (!string.IsNullOrEmpty(item.Value))
                     {
-                        string NormalizedValue = Item.Text.Equals("DATE") | Item.Text.Equals("TIME") | Item.Text.Equals("DURATION") | Item.Text.Equals("SET") ? Utils.GetNormalizedString(Item.Text switch
+                        if (string.IsNullOrEmpty(item.NormalizedValue))
                         {
-                            "DATE" => ConvertForm.Date,
-                            "TIME" => ConvertForm.Time,
-                            "DURATION" => ConvertForm.Duration,
-                            "SET" => ConvertForm.Set,
-                            _ => throw new NotImplementedException()
-                        }, item.Value) : string.Empty;
+                            string NormalizedValue = Utils.IsSpecialToken(Item.Text) ? Utils.GetNormalizedString(Item.Text switch
+                            {
+                                "DATE" => ConvertForm.Date,
+                                "TIME" => ConvertForm.Time,
+                                "DURATION" => ConvertForm.Duration,
+                                "SET" => ConvertForm.Set,
+                                _ => throw new NotImplementedException()
+                            }, item.Value) : string.Empty;
 
-                        OutputText.Add($"{Filename}_{Item.Text}_{item.StartIndex}_{item.EndIndex}_{item.Value}{NormalizedValue}");
+                            OutputText.Add($"{Filename}_{Item.Text}_{item.StartIndex}_{item.EndIndex}_{item.Value}{NormalizedValue}");
+                        }
+                        else
+                        {
+                            OutputText.Add($"{Filename}_{Item.Text}_{item.StartIndex}_{item.EndIndex}_{item.Value}{item.NormalizedValue}");
+                        }
                     }
                 }
             }
@@ -838,55 +959,62 @@ internal partial class Program
 
         for (int i = 0; i < ValidationSplited.Length; i++)
         {
-            //string CurrentItem = ValidationSplited[i];
             string[] CUR_SplitedString = ValidationSplited[i].Split('\t');
-            string TrimmedPathString = $"{Path.GetFileName(CUR_SplitedString[0])}\t{CUR_SplitedString[1]}\t{CUR_SplitedString[2]}\t{CUR_SplitedString[3]}\t{CUR_SplitedString[4]}";
-
-            Match RegexOfCurrentItem = RegexPatterns.Answer().Match(TrimmedPathString);
-            //Get filename
-            string CUR_Filename = RegexOfCurrentItem.Groups[1].Value;
-            string CUR_PHIType = RegexOfCurrentItem.Groups[2].Value.Trim();
-            string CUR_PHIStartIndex = RegexOfCurrentItem.Groups[3].Value.Trim();
-            string CUR_PHIEndIndex = RegexOfCurrentItem.Groups[4].Value.Trim();
-            string CUR_PHIValue = RegexOfCurrentItem.Groups[5].Value.Trim();
+            string CUR_Filename = CUR_SplitedString[0].Trim();
+            string CUR_PHIType = CUR_SplitedString[1].Trim();
+            string CUR_PHIStartIndex = CUR_SplitedString[2].Trim();
+            string CUR_PHIEndIndex = CUR_SplitedString[3].Trim();
+            string CUR_PHIValue = Utils.IsSpecialToken(CUR_PHIType)
+                                    ? $"{CUR_SplitedString[4].Trim()}\t{CUR_SplitedString[5].Trim()}"
+                                    : CUR_SplitedString[4].Trim();
+            string PHIDataText = $"{CUR_Filename}\t{CUR_PHIType}\t{CUR_PHIStartIndex}\t{CUR_PHIEndIndex}\t{CUR_PHIValue}";
             //For time
-            Match RegexOfValidTime = RegexPatterns.ValidationTime().Match(CUR_PHIValue);
-            string CUR_TimeValue = RegexOfValidTime.Groups[1].Value.Trim();
-            string CUR_NormalizedValue = RegexOfValidTime.Groups[2].Value.Trim();
+            string[] ValidTimeSplited = CUR_PHIValue.Split('\t');
+            string CUR_TimeValue = ValidTimeSplited[0];
+            string CUR_NormalizedValue = ValidTimeSplited.Length > 1 ? ValidTimeSplited[1] : string.Empty;
 
             //Display message
             double ProcessPercent = Math.Round((double)i / (double)ValidationSplited.Length * 100, 2);
             Console.Clear();
             Console.WriteLine("Processing validation data... This may take a while...");
-            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", CUR_Filename, i, ValidationSplited.Length, ProcessPercent);
+            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", CUR_Filename, i, ValidationSplited.Length - 1, ProcessPercent);
 
-            string PHIDataText = $"{CUR_Filename}\t{CUR_PHIType}\t{CUR_PHIStartIndex}\t{CUR_PHIEndIndex}\t{CUR_PHIValue}";
             if (OutputSplited.Any(x => x.Contains(PHIDataText)))
             {
                 //Add to validated list
-                ValidatedList.Add(TrimmedPathString);
+                ValidatedList.Add(PHIDataText);
                 //Remove the item from to be analyze list
-                ListToBeAnalyze.Remove(TrimmedPathString);
+                ListToBeAnalyze.Remove(PHIDataText);
             }
 
+            //Console.ReadKey();
             if (CUR_PHIType.Equals("TIME"))
             {
                 foreach (string item in OutputSplited)
                 {
-                    Match RegexOfOutput = RegexPatterns.Answer().Match(item);
-                    Match RegexOfOutputTime = RegexPatterns.ValidationTime().Match(CUR_PHIValue);
-                    string OPT_Filename = RegexOfOutput.Groups[1].Value.Trim();
-                    string OPT_PHIType = RegexOfOutput.Groups[2].Value.Trim();
-                    string OPT_PHIStartIndex = RegexOfOutput.Groups[3].Value.Trim();
-                    string OPT_PHIEndIndex = RegexOfOutput.Groups[4].Value.Trim();
-                    string OPT_TimeValue = RegexOfOutputTime.Groups[1].Value.Trim();
-                    string OPT_NormalizedValue = RegexOfOutputTime.Groups[2].Value.Trim();
-                    if (OPT_Filename.Equals(CUR_Filename) && OPT_PHIType.Equals(CUR_PHIType) 
-                        && OPT_PHIStartIndex.Equals(CUR_PHIStartIndex) && OPT_PHIEndIndex.Equals(CUR_PHIEndIndex) 
-                        && CUR_TimeValue.Equals(OPT_TimeValue) && CUR_NormalizedValue.Equals(OPT_NormalizedValue))
+                    string[] OutputTimeArray = CUR_PHIValue.Split('\t');
+                    //
+                    if (OutputTimeArray.Length > 1)
                     {
-                        ValidatedList.Add(TrimmedPathString);
-                        ListToBeAnalyze.Remove(TrimmedPathString);
+                        Match RegexOfOutput = RegexPatterns.Answer().Match(item);
+                        string OPT_Filename = RegexOfOutput.Groups[1].Value.Trim();
+                        string OPT_PHIType = RegexOfOutput.Groups[2].Value.Trim();
+                        string OPT_PHIStartIndex = RegexOfOutput.Groups[3].Value.Trim();
+                        string OPT_PHIEndIndex = RegexOfOutput.Groups[4].Value.Trim();
+                        string OPT_TimeValue = OutputTimeArray[0].Trim();
+                        string OPT_NormalizedValue = OutputTimeArray[1].Trim();
+                        bool IsFilenameSame = OPT_Filename.Equals(CUR_Filename);
+                        bool IsTypeSame = OPT_PHIType.Equals(CUR_PHIType);
+                        bool IsStartIndexSame = OPT_PHIStartIndex.Equals(CUR_PHIStartIndex);
+                        bool IsEndIndexSame = OPT_PHIEndIndex.Equals(CUR_PHIEndIndex);
+                        bool IsTimeValueSame = CUR_TimeValue.Equals(OPT_TimeValue);
+                        bool IsNormalizedValueSame = CUR_NormalizedValue.Equals(OPT_NormalizedValue);
+                        if (IsFilenameSame && IsTypeSame && IsStartIndexSame
+                            && IsEndIndexSame && IsTimeValueSame && IsNormalizedValueSame)
+                        {
+                            ValidatedList.Add(PHIDataText);
+                            ListToBeAnalyze.Remove(PHIDataText);
+                        }
                     }
                 }
             }
@@ -899,7 +1027,7 @@ internal partial class Program
                 string Left_Filename = RegexOfLeftItem.Groups[1].Value.Trim();
                 string Left_PHIStartIndex = RegexOfLeftItem.Groups[3].Value.Trim();
                 string Left_PHIEndIndex = RegexOfLeftItem.Groups[4].Value.Trim();
-                string Left_PHIValue = RegexOfCurrentItem.Groups[5].Value.Trim();
+                string Left_PHIValue = RegexOfLeftItem.Groups[5].Value.Trim();
                 //Make sure it's same file, eg: 10
                 if (Left_Filename.Equals(CUR_Filename))
                 {
@@ -907,7 +1035,7 @@ internal partial class Program
                     string Left_TimeValue = RegexOfLeftTime.Groups[1].Value.Trim();
                     string Left_NormalizedValue = RegexOfLeftTime.Groups[2].Value.Trim();
                     //Check if it's a date or time
-                    if (RegexOfValidTime.Success)
+                    if (ValidTimeSplited.Length > 1)
                     {
                         bool IsStartIndexSame = Left_PHIStartIndex == CUR_PHIStartIndex; 
                         bool IsEndIndexSame = Left_PHIEndIndex == CUR_PHIEndIndex;
@@ -940,28 +1068,30 @@ internal partial class Program
         }
 
         //Generate missing value list
-        MissingList = ValidationSplited.Where(x => !ValidatedList.Contains(x)).ToList();
+        MissingList = ValidationSplited.Where(x => !ValidatedList.Contains(x.Trim())).ToList();
         for (int i = 0; i < MismatchList.Count; i++)
         {
             Console.Clear();
             //Get filename
-            Match Mismatched = RegexPatterns.Answer().Match(MismatchList[i].OriginalValue);
+            string[] MismatchSplited = MismatchList[i].OriginalValue.Split('\t');
             double ProcessPercent = Math.Round((double)i / (double)MismatchList.Count * 100, 2);
             Console.WriteLine("Generating missing values list... This may take a while...");
-            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", Mismatched.Groups[1].Value, i, MismatchList.Count, ProcessPercent);
+            Console.WriteLine("Current filename: {0} ({1}/{2}) | {3}%", MismatchSplited[0], i, MismatchList.Count - 1, ProcessPercent);
+
             foreach (string item2 in MissingList.ToArray())
             {
-                Match Missing = RegexPatterns.Answer().Match(item2);
-                bool IsFilenameSame = Mismatched.Groups[1].Value.Equals(Missing.Groups[1].Value);
-                bool IsTypeSame = Mismatched.Groups[2].Value.Equals(Missing.Groups[2].Value);
-                bool IsStartIndexSame = Mismatched.Groups[3].Value.Equals(Missing.Groups[3].Value);
-                bool IsEndIndexSame = Mismatched.Groups[4].Value.Equals(Missing.Groups[4].Value);
+                string[] MissingSplited = item2.Split("\t");
+                bool IsFilenameSame = MismatchSplited[0].Equals(MissingSplited[0]);
+                bool IsTypeSame = MismatchSplited[1].Equals(MissingSplited[1]);
+                bool IsStartIndexSame = MismatchSplited[2].Equals(MissingSplited[2]);
+                bool IsEndIndexSame = MismatchSplited[3].Equals(MissingSplited[3]);
                 //Check filename, type
                 if (IsFilenameSame && IsTypeSame)
                 {
                     if (IsStartIndexSame | IsEndIndexSame)
                     {
                         MissingList.Remove(item2);
+                        
                     }
                 }
             }
@@ -1012,7 +1142,7 @@ internal partial class Program
         //Show validation result
         Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
         Console.WriteLine("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2));
-        Console.WriteLine("Validation result is saved to {0}\nMismatch result is saved to {1}\nMissing result is saved to {2}", Location.Validation, Location.Mismatch, Location.Missing);
+        Console.WriteLine("Validated, Mismatch and Missing result is saved to {0}", Path.GetDirectoryName(Location.Validation));
         Console.WriteLine("Press [Y] to open validation file, [M] key return to main menu OR any key to exit.");
         switch (Console.ReadKey().Key)
         {
