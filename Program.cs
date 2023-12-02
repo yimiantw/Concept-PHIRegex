@@ -113,7 +113,7 @@ internal partial class Program
                                             ? Config.AppConfig.SaveLocation
                                             : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
                     StreamWriter sw = new(SaveLocation);
-                    sw.WriteLine(string.Join("\r\n", opt.Where(x => x.Length > 0).Select(x => x)));
+                    sw.WriteLine(string.Join('\n', opt.Where(x => x.Length > 0).Select(x => x)));
                     sw.Close();
                     //Ask user whether want to open the result file
                     Console.WriteLine(Config.AppConfig.ValidateFileLocations.Any()
@@ -448,16 +448,17 @@ internal partial class Program
                 IEnumerable<Group> DocValues = Doc.Groups.Values.Skip(1);
                 foreach (Group item in DocValues)
                 {
-                    string TrimmedDoc = RegexPatterns.DocUnusedString().Replace(item.Value, string.Empty).Trim();
+                    string NoNewLine = item.Value.Split('\n').First().Trim();
+                    string TrimmedDoc = RegexPatterns.DocUnusedString().Replace(NoNewLine, string.Empty);
                     if (!Data.Doctors.Any(x => x.Value.Contains(TrimmedDoc)))
                     {
                         if (item.Value.Length is 2)
                         {
                             Data.Doctors.Add(new()
                             {
-                                Value = item.Value,
+                                Value = NoNewLine,
                                 StartIndex = item.Index,
-                                EndIndex = item.Index + item.Value.Length,
+                                EndIndex = item.Index + NoNewLine.Length,
                             });
                         }
                         else
@@ -466,7 +467,7 @@ internal partial class Program
                             {
                                 Value = TrimmedDoc,
                                 StartIndex = RawData.IndexOf(item.Value),
-                                EndIndex = RawData.IndexOf(item.Value) + item.Value.Length,
+                                EndIndex = RawData.IndexOf(item.Value) + NoNewLine.Length,
                             });
                         }
                     }
