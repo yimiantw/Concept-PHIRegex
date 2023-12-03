@@ -47,7 +47,7 @@ internal class Utils
         { "DEC", "12" }
     }.ToFrozenDictionary();
 
-    internal static (bool Enabled, string ValidateFile, string SourceFile) CheckValidateMode()
+    internal static (bool Enabled, bool MergeFile, string ValidateFile, string SourceFile) CheckValidateMode()
     {
         string[] CommandArgs = Environment.GetCommandLineArgs();
         if ((CommandArgs.Contains("-V") && CommandArgs.Contains("-S"))
@@ -55,9 +55,10 @@ internal class Utils
         {
             int IndexOfValidateFile = Array.FindIndex(CommandArgs, x => x.Contains("-V") | x.Contains("--validate")) + 1;
             int IndexOfValidateSourceFile = Array.FindIndex(CommandArgs, x => x.Contains("-S") | x.Contains("--source")) + 1;
-            return (true, CommandArgs[IndexOfValidateFile], CommandArgs[IndexOfValidateSourceFile]);
+            bool MergeFile = CommandArgs.Contains("--merge");
+            return (true, MergeFile, CommandArgs[IndexOfValidateFile], CommandArgs[IndexOfValidateSourceFile]);
         }
-        return (false, string.Empty, string.Empty);
+        return (false, false, string.Empty, string.Empty);
     }
     
     internal static bool IsSpecialToken(string Value)
