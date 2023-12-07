@@ -966,11 +966,6 @@ internal partial class Program
                 string CUR_PHIType = CUR_SplitedString[1].Trim();
                 string CUR_PHIStartIndex = CUR_SplitedString[2].Trim();
                 string CUR_PHIEndIndex = CUR_SplitedString[3].Trim();
-                //if (Utils.IsSpecialToken(CUR_PHIType) & CUR_SplitedString.Length < 6)
-                //{
-                //    Console.WriteLine(ValidationSplited[i]);
-                //    Console.ReadKey();
-                //}
                 string CUR_PHIValue = Utils.IsSpecialToken(CUR_PHIType)
                                         ? $"{CUR_SplitedString[4].Trim()}\t{CUR_SplitedString[5].Trim()}"
                                         : CUR_SplitedString[4].Trim();
@@ -1110,17 +1105,16 @@ internal partial class Program
 
         if (MergeFile)
         {
-            //Console.Clear();
-
+            Console.Clear();
             List<string> newlist = [.. OutputSplited];
-            foreach (var item in MissingList.ToArray())
+            foreach (string item in MissingList.ToArray())
             {
-                string fn = item.Split("\t")[0].Trim();
+                string Filename = item.Split("\t")[0].Trim();
                 for (int i = 0; i < OutputSplited.Length; i++)
                 {
-                    string o_fn = OutputSplited[i].Split("\t")[0].Trim();
+                    string OUT_Filename = OutputSplited[i].Split("\t")[0].Trim();
                     string ext_spt_fn = (i + 1) < OutputSplited.Length ? OutputSplited[i + 1].Split('\t')[0].Trim() : string.Empty;
-                    if (fn.Equals(o_fn) && ext_spt_fn.Trim() != o_fn)
+                    if (Filename.Equals(OUT_Filename) && ext_spt_fn.Trim() != OUT_Filename)
                     {
                         newlist.Insert(newlist.IndexOf(OutputSplited[i]), item);
                         MissingList.Remove(item);
