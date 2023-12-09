@@ -1,7 +1,5 @@
 ﻿using System.Data.SqlTypes;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -91,16 +89,14 @@ internal partial class Program
                     {
                         Console.Clear();
                         Console.WriteLine("Processing data...Please don't close the window");
-                        Console.WriteLine("Mode: {0}", Config.AppConfig.CustomRegex.Enabled ? "Custom Regex pattern from config" : "Regex from the program supplies");
+                        Console.WriteLine("Regex from the program supplies");
                         Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length - 1, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
 
                         using StreamReader sr = new(FilesArray[i]);
                         string RawData = sr.ReadToEnd();
                         sr.Close();
                         string Filename = Path.GetFileNameWithoutExtension(FilesArray[i]);
-                        PHIData ProcessedData = Config.AppConfig.CustomRegex.Enabled
-                                                    ? ProcessRegexWithCustomPattern(RawData)
-                                                    : ProcessRegexFromRawData(RawData);
+                        PHIData ProcessedData = ProcessRegexFromRawData(RawData);
                         List_PHIData.Add(ProcessedData);
                         opt.Add(GenerateOutput(Filename, ProcessedData));
                     }
@@ -756,126 +752,6 @@ internal partial class Program
     }
     #endregion
 
-    #region ProcessRegexWithCustomPattern
-    internal static PHIData ProcessRegexWithCustomPattern(string RawData)
-    {
-        PHIData Data = new();
-
-        //<Pattern>@@<index>
-        #region TupleArray
-        (IEnumerable<string> Patterns, object PHIData)[] TupleArray =
-        [
-            (Config.AppConfig.CustomRegex.Patterns.IDNumber, Data.IDs),
-            (Config.AppConfig.CustomRegex.Patterns.MedicalRecord, Data.MedicalRecord),
-            (Config.AppConfig.CustomRegex.Patterns.PatientName, Data.Patient),
-            (Config.AppConfig.CustomRegex.Patterns.Doctor, Data.Doctors),
-            (Config.AppConfig.CustomRegex.Patterns.Username, Data.IDs),
-            (Config.AppConfig.CustomRegex.Patterns.Profession, Data.Profession),
-            (Config.AppConfig.CustomRegex.Patterns.Department, Data.Department),
-            (Config.AppConfig.CustomRegex.Patterns.Hospital, Data.Hospital),
-            (Config.AppConfig.CustomRegex.Patterns.Organization, Data.Orgainzations),
-            (Config.AppConfig.CustomRegex.Patterns.Street, Data.Street),
-            (Config.AppConfig.CustomRegex.Patterns.City, Data.City),
-            (Config.AppConfig.CustomRegex.Patterns.State, Data.State),
-            (Config.AppConfig.CustomRegex.Patterns.Country, Data.Country),
-            (Config.AppConfig.CustomRegex.Patterns.Zip, Data.Zip),
-            (Config.AppConfig.CustomRegex.Patterns.LocationOther, Data.LocationOther),
-            (Config.AppConfig.CustomRegex.Patterns.Age, Data.Age),
-            (Config.AppConfig.CustomRegex.Patterns.Date, Data.Dates),
-            (Config.AppConfig.CustomRegex.Patterns.Time, Data.Times),
-            (Config.AppConfig.CustomRegex.Patterns.Duration, Data.Durations),
-            (Config.AppConfig.CustomRegex.Patterns.Set, Data.Sets),
-            (Config.AppConfig.CustomRegex.Patterns.Phone, Data.Phone),
-            (Config.AppConfig.CustomRegex.Patterns.Fax, Data.Fax),
-            (Config.AppConfig.CustomRegex.Patterns.Email, Data.Email),
-            (Config.AppConfig.CustomRegex.Patterns.URL, Data.URL),
-            (Config.AppConfig.CustomRegex.Patterns.IPAddress, Data.IPAddr)
-        ];
-        #endregion
-
-        foreach ((IEnumerable<string> Patterns, object Data) DataTuple in TupleArray)
-        {
-            foreach (string Pattern in DataTuple.Patterns)
-            {
-                string[] SplitedPattern = Pattern.Split("@@");
-                string RegexPattern = SplitedPattern[0];
-                string[] Indexes = SplitedPattern.Length > 1 ? SplitedPattern[1].Split(',') : [];
-
-                MatchCollection RegexCollection = Regex.Matches(RawData, Pattern);
-                if (RegexCollection.Count > 0)
-                {
-                    foreach (Match MatchID in RegexCollection.Cast<Match>())
-                    {
-                        if (Indexes.Length > 0)
-                        {
-                            foreach (string Index in Indexes)
-                            {
-                                if (int.Parse(Index) < MatchID.Groups.Count)
-                                {
-                                    string Value = MatchID.Groups[Index].Value.Trim();
-                                    int StartIndex = RawData.IndexOf(Value);
-                                    int EndIndex = RawData.IndexOf(Value) + Value.Length;
-
-                                    if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
-                                    {
-                                        List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
-                                        JustData?.Add(new()
-                                        {
-                                            Value = Value,
-                                            StartIndex = StartIndex,
-                                            EndIndex = EndIndex,
-                                        });
-                                    }
-                                    else
-                                    {
-                                        RegexData? JustData = DataTuple.Data as RegexData;
-                                        if (JustData is not null)
-                                        {
-                                            JustData.Value = Value;
-                                            JustData.StartIndex = StartIndex;
-                                            JustData.EndIndex = EndIndex;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            string Value = MatchID.Value.Trim();
-                            int StartIndex = RawData.IndexOf(Value);
-                            int EndIndex = RawData.IndexOf(Value) + Value.Length;
-
-                            if (Equals(DataTuple.Data.GetType(), typeof(List<RegexData>)))
-                            {
-                                List<RegexData>? JustData = DataTuple.Data as List<RegexData>;
-                                JustData?.Add(new()
-                                {
-                                    Value = Value,
-                                    StartIndex = StartIndex,
-                                    EndIndex = EndIndex,
-                                });
-                            }
-                            else
-                            {
-                                RegexData? JustData = DataTuple.Data as RegexData;
-                                if (JustData is not null)
-                                {
-                                    JustData.Value = Value;
-                                    JustData.StartIndex = StartIndex;
-                                    JustData.EndIndex = EndIndex;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
-
-        return Data;
-    }
-    #endregion
 
     #region GenerateOutput
     internal static string GenerateOutput(string Filename, PHIData Data)
@@ -1134,7 +1010,7 @@ internal partial class Program
         double HitRate = (double)ValidatedList.Count / (double)ValidationSplited.Length * 100;
 
         //Save validation result
-        (string Validation, string Mismatch, string Missing) Location = (!string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
+        (string Validation, string Mismatch, string Missing) = (!string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
             ? "validated_answer.txt" : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt"),
             !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "mismatch_answer.txt"
                                   : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt"),
@@ -1146,9 +1022,9 @@ internal partial class Program
         {
             using StreamWriter sw = new(i switch
             {
-                1 => Location.Validation,
-                2 => Location.Mismatch,
-                3 => Location.Missing,
+                1 => Validation,
+                2 => Mismatch,
+                3 => Missing,
                 _ => throw new NotImplementedException()
             });
             sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
@@ -1174,12 +1050,12 @@ internal partial class Program
         //Show validation result
         Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
         Console.WriteLine("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2));
-        Console.WriteLine("Validated, Mismatch and Missing result is saved to {0}", Path.GetDirectoryName(Location.Validation));
+        Console.WriteLine("Validated, Mismatch and Missing result is saved to {0}", Path.GetDirectoryName(Validation));
         Console.WriteLine("Press [Y] to open validation file, [M] key return to main menu OR any key to exit.");
         switch (Console.ReadKey().Key)
         {
             case ConsoleKey.Y:
-                Utils.OpenEditor(Location.Validation);
+                Utils.OpenEditor(Validation);
                 break;
             case ConsoleKey.M:
                 Console.Beep();
