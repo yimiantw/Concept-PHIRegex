@@ -1,95 +1,109 @@
 
-# PHI Data Finder (Concept)
+# PHI資料分析器
 
-This program is designed to find any Protected Health Infomation (PHI) with Regular Expression from medical records.
+本隊結合深度學習及正規表達式來分析病例中的 Protected Health Infomation (PHI) 資訊
 
-## Patterns
+## 模式 Patterns
 
-This concept uses following regex patterns to identify PHI data:
+本隊使用的模式清單可至: [PATTERNS.md](PATTERNS.md) 了解
 
-* **Category: ID**\
-Identify Number: ```\d{2}[A-Z]\d{5,7}[A-Z0-9]?```\
-Medical Record: ```"\d{5,7}.[A-Z]{3}"```
+## 執行環境
 
-* **Category: Name**\
-Patient Name: ```^[A-Za-z]{2,}\s?[A-Za-z]{2,},\s?[A-Za-z]{2,}\s?[A-Za-z]+```\
-Doctor (Variant I.): ```(?:Dr|DR|PRO)[\s?|.]\s?([A-Z]+\s?.?\s?\w+?\s?\w+(?:\s\w{3,})?)```\
-Doctor (Variant II.): ```^\w+:\s+\(([A-Z]+\s+\w+)\)```\
-Doctor (Variant III.): ```(?:Result)\s?\w+\.?\s?(\w+\s?\.?\s?\w+\.?\w+)```\
-Username: ```[A-Za-z]{2,}\w?\d{3,}```
+### 模型訓練及推理
+* [Python 3.11.7](https://www.python.org/downloads/release/python-3117/)
 
-* **Category: Profession**\
-Profession: ```(?:is\sa\s(\w+)|(\w+)\sjob)```
+使用的PIP套件清單：
+- numpy
+- tqdm
+- datasets
+- transformers
+- islab-opendeid
+- torch
+- torchvision 
+- torchaudio
 
-* C**ategory: Location**\
-Location (Department & Hospital): ```^Location:\s{2}((?:\d\/\d\s)?\w+\s?\w+\s?\w+\s?)\-\s?(\w+\s?\w+.?\w+)```\
-Organization: ```(?:\((\w+(?:\W|\s)?\w+\s(?:Corporation|Company))|(?:Performed\sat\s)(\w+\s?(?:&|\s)\s?\w+\s?\w+)|(?:Department\sof\s\w+\s?\w?)\,\s(\w+)\,\s\w)```\
-Address (Street, City, State, Zip, Location-Other): ```^(?:(\w+(?:\s?\w)+)|((?:PO|P.O.)\s(?:BOX)\s\d{2,4}))\n(\w+(?:\s?\w)+)\s{2}((?:[A-Za-z]+\s){1,})\s{1,2}(\d{4})```
+### 正規表達式
 
-* **Category: Age**\
-Age (Variant I.): ```(?:in\s)?(\d{1,3})\s?(?:yo|yr|years\sold)```\
-Age (Variant II.): ```(?:age)\s?(\d{1,3})```
-
-* **Category: Date**\
-Date & Time: ```(?:(\d{3,4})Hrs\s{1}on\s)?(\d{1,2}[/|\.]\d{1,2}[/|\.]\d{2,4})(?:\s{1}at\s{1}(\d{1,2}:\d{2}))?```
-
-* **Category: Contract**\
-Phone: ```\((\d{4}\s?\d{4})\)```\
-Fax: ```\d{2}-\d{4}-\d{4}```\
-Email: ```\w.+@\w.+\.\w+```\
-URL: ```([-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6})\b[-a-zA-Z0-9()@:%_\+.~#?&//=]*```\
-IPAddress (IPv4): ```\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}```
-
-## Performance
-Tested with 1734 files where the data from first phase dataset and second phase dataset
-* **Compiled *w/* Native AOT** (Binary size: 3.41MB)\
-```Total files: 1734 | Process Time: 2198ms | Memory Used: 35.793 MB```
-
-* **Compiled *w/o* Native AOT** (Binary size: 73.1 MB)\
-```Total files: 1734 | Process Time: 2760ms | Memory Used: 65.32 MB```
-
-**Compiled *w/* Native AOT** provides 2143.6% smaller binary size, 20.3% lower processing time and 54.8% lower memory usage.
-
-## Configuration
-This program generates a JSON-based config called ```config.json``` at launch at the first time.
-
-For details of the configuration file, please refer to [CONFIG.md](CONFIG.md).
-
-## Prerequisites
-
-Since this project is developed in .NET 8.0, you can use Visual Studio 2022 to build and debug 
-
+以 Visual Studio 2022 為編寫環境，.NET SDK的版本為 8.0
 * [Visual Studio 2022 (17.8 or later)](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-notes)
-
-OR, you can use editors with runtime installed
-
-* [Visual Studio Code](https://code.visualstudio.com/)
-* [VSCodium](https://vscodium.com/)
 * [.NET 8.0 SDK / Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
-It's **recommended** to install SDK instead of runtime since this repository doesn't release any executables. You'll need to compile the whole project on your own.
+專案預設開啟 NativeAOT 編譯，因此需要於 Visual Studio 安裝程式中勾選**使用 C++ 的桌面開發**
+* [Install C and C++ support in Visual Studio](https://learn.microsoft.com/en-us/cpp/build/vscpp-step-0-installation?view=msvc-170)
 
-## How to compile
 
-You can run the project with following commands if you choose to use editor with SDK installed:
+## 使用方法
 
-* First, switch to the project's location: ```cd <project_folder>```
+### I. 模型訓練及推理
 
-* Run the project ```dotnet run```
+* 程式碼目錄中的 Python_Scripts 皆為 Python 腳本
 
-* **OR** build the project ```dotnet build```
+| 檔案名稱 | 說明 |
+| ----------- | ----------- |
+| Training_rev2.ipynb | 模型訓練腳本 |
+| Prediction_rev3.ipynb | 為資料推理腳本 | 
 
-* **OR** build the project with **Native AOT** enabled ***(Slower, but faster code execution)***
+* Training_rev2.ipynb 內參數說明
+
+| 檔案名稱 | 說明 |
+| ----------- | ----------- |
+| MODEL_SAVEDIR | 模型儲存目錄 |
+| TRAINING_DATASET_PATH | 訓練集目錄路徑 | 
+| MODEL_FILENAME | 模型儲存名稱 |
+| LANGUAGE_MODEL | 語言模型名稱，預設為：EleutherAI/pythia-70m | 
+| DATALOADER_BATCH_SIZE | 資料載入器的 batch 載入大小，預設為：8 |
+| TORCH_DEVICE | PyTorch 的處理後端，首選為cuda、次選為mps、最後選為cpu | 
+| FORCE_CLEAR_MEMORY_AFTER_EPOCH | 每一期結束後皆清除處理後端的快取，預設為：False |
+| EPOCHS | 訓練期數，預設為：10 | 
+
+* Prediction_rev3.ipynb 內參數說明
+
+| 檔案名稱 | 說明 |
+| ----------- | ----------- |
+| MODEL_DIR | 模型目錄 |
+| MODEL_FILENAME | 模型名稱 |
+| SAVE_LOCATION_WITH_FILENAME | 推理結果儲存路徑 | 
+| TEST_DATASET_PATH | 欲推理的資料集路徑 | 
+| VALIDATE_OUT_PATH | 驗證結果輸出路徑|
+| LANGUAGE_MODEL | 語言模型名稱，預設為：EleutherAI/pythia-70m | 
+| TORCH_DEVICE | PyTorch 的處理後端，首選為cuda、次選為mps、最後選為cpu | 
+| PREDICT_BATCH_SIZE | 資料載入器的 batch 載入大小，預設為：32 | 
+
+* 輸出結果
+
+| 檔案名稱 | 說明 |
+| ----------- | ----------- |
+| Training_rev2.ipynb | 在指定的目錄下，產生<指定的名稱>.pt (例：70m_epoch.pt) |
+| Prediction_rev3.ipynb | 在指定的目錄下，產生<指定的名稱>.txt (例：answer_dl.txt) | 
+
+其中推理結果的檔案應為此格式：```1097	MEDICALRECORD	1	11	433475.RDC```
+
+### II. 正規表達式
+
+* 在終端機以下列指令打開編譯完成的 **(需先切換到程式所在的目錄)**
+```bash
+.\Concept-PHIRegex.exe --dataset <需推理資料集路徑> --result <模型推理完成輸出的文字檔案路徑>
 ```
-dotnet publish -c Release -p:PublishAot=true
+
+* 完成後，可以 **Y** 按鍵來打開 answer.txt
+```bash
+Merging files... This may take a while...
+956/956 | 99.9%
+Done!
+
+Total files: 950 | Process Time: 7443ms | Memory Used: 42.664 MB
+
+Final result is saved to D:\Test\answer.txt
+Press [Y] to open validation file OR any key to exit.
 ```
 
-**Volia! The program is ready for you to test!**\
-*Additionally, please file bug reports if you encountered any issues regards to the program.*
+* answer.txt 將在程式所在的目錄中，且格式應為：
+```bash
+1097	MEDICALRECORD	1	11	433475.RDC
+```
 
-## Acknowledgements
+## 參考資料
 
  - [Regex101](https://regex101.com/)
- - [What is a good regular expression to match a URL?](https://stackoverflow.com/questions/3809401/what-is-a-good-regular-expression-to-match-a-url)
  - [隱私保護與醫學數據標準化競賽：解碼臨床病例、讓數據說故事](https://codalab.lisn.upsaclay.fr/competitions/15425)
 
