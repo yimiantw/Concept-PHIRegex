@@ -1,5 +1,4 @@
-﻿using System.Data.SqlTypes;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -11,217 +10,101 @@ internal partial class Program
     {
         try
         {
-            (bool ValidateEnabled, bool MergeFile, string ValidateFile, string SourceFile) = Utils.CheckValidateMode();
+            (bool IsSatisfied, bool NoMergeFile, string? DatasetPath, string? DLResult) = Utils.IsRuntimeSatisfied();
+            string[] FilesArray = [];
+
             #region Normal mode
-            if (!ValidateEnabled)
+            if (!IsSatisfied)
             {
+#if !DEBUG
                 while (true)
                 {
-                    //Read config
-                    Config.ReadConfig();
-
-#if !DEBUG
-                string InputPath = GetConsoleInput();
-                string[] FilesArray = [];
-                //Check whether the input is a directory or a file
-                if (File.GetAttributes(InputPath).HasFlag(FileAttributes.Directory))
-                {
-                    //Enumerate all text (.txt) files
-                    FilesArray = Directory.GetFiles(InputPath, "*.txt", SearchOption.TopDirectoryOnly);
-
-                    //Check whether there is any text file in the target directory
-                    if (FilesArray.Length == 0)
+                    Console.Clear();
+                    Console.Write(@"Dataset path (e.g. D:\TestDatasets):");
+                    DatasetPath = Console.ReadLine()!.Replace("\"", string.Empty);
+                    if (!string.IsNullOrEmpty(DatasetPath) && Path.Exists(DatasetPath) && Directory.EnumerateFiles(DatasetPath, "*.txt", SearchOption.TopDirectoryOnly).Any())
                     {
-                        Console.WriteLine($"Path: {InputPath}");
-                        Console.WriteLine("\nThere is no text files available in target directory, operation cancelled.");
-                        Console.WriteLine("Press any key to exit.");
-                        Console.ReadKey();
-                        Environment.Exit(0);
+                        break;
                     }
                 }
-                else
-                {
-                    FilesArray = [InputPath];
-                }
 
-                //Save path to config
-                Config.AppConfig.PreviousLocation = InputPath;
-            Config.WriteConfig();
+                while (true)
+                {
+                    Console.Clear();
+                    Console.Write(@"Deep learning answer path (e.g. D:\dl_answer.txt):");
+                    DLResult = Console.ReadLine()!.Replace("\"", string.Empty);
+                    if (!string.IsNullOrEmpty(DLResult) && File.Exists(DLResult) && File.ReadAllLines(DLResult).Length > 0)
+                    {
+                        break;
+                    }
+                }
 #else
-                    string[] FilesArray = Directory.GetFiles(@"D:\Test\DataSets\Mixed", "*.txt", SearchOption.TopDirectoryOnly);
-                    //string[] FilesArray = [@"D:\Test\DataSets\First_Phase\103.txt"];
-                    Config.AppConfig.ValidateFileLocations = new string[]
-                    {
-                        @"D:\Test\DataSets\first_answer.txt",
-                        @"D:\Test\DataSets\second_answer.txt"
-                    };
-                    //Config.AppConfig.ValidateFileLocations = new string[]
-                    //{
-                    //    @"D:\Test\DataSets\answer_DL.txt"
-                    //};
-
-                    foreach (string FilePath in FilesArray.Where(x => !Path.Exists(x)))
-                    {
-                        Console.WriteLine("File: {0} is not exist, please check the \"FilesArray\" variable in the source code", FilePath);
-                        Console.WriteLine("Press any key to exit...");
-                        Console.ReadKey();
-                        Environment.Exit(0);
-                    }
+                    string[] FilesArray = Directory.GetFiles(@"D:\TestDatasets\opendid_test", "*.txt", SearchOption.TopDirectoryOnly);
+                    DLResult = @"D:\Test\DataSets\answer_DL.txt";
 #endif
-                    //Check validation files
-                    if (Config.AppConfig.ValidateFileLocations.Any())
-                    {
-                        Console.WriteLine("{0} validation files detected, which are: {1}",
-                                            Config.AppConfig.ValidateFileLocations.Count(),
-                                            string.Join(',', Config.AppConfig.ValidateFileLocations.Select(x => Path.GetFileName(x))));
-                    }
-
-                    //Calcuate process time
-                    Stopwatch ProcessTime = new();
-                    ProcessTime.Start();
-                    Console.Title = "Processing data...";
-
-                    //Initialize data class
-                    List<PHIData> List_PHIData = [];
-                    List<string> opt = [];
-
-                    for (int i = 0; i < FilesArray.Length; i++)
-                    {
-                        Console.Clear();
-                        Console.WriteLine("Processing data...Please don't close the window");
-                        Console.WriteLine("Regex from the program supplies");
-                        Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length - 1, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
-
-                        using StreamReader sr = new(FilesArray[i]);
-                        string RawData = sr.ReadToEnd();
-                        sr.Close();
-                        string Filename = Path.GetFileNameWithoutExtension(FilesArray[i]);
-                        PHIData ProcessedData = ProcessRegexFromRawData(RawData);
-                        List_PHIData.Add(ProcessedData);
-                        opt.Add(GenerateOutput(Filename, ProcessedData));
-                    }
-
-                    //Display processed time
-                    Console.WriteLine("Done!");
-                    ProcessTime.Stop();
-                    Console.Title = "Done!";
-                    Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Length, ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
-
-                    // Write results into text file
-                    string SaveLocation = !string.IsNullOrEmpty(Config.AppConfig.SaveLocation)
-                                            ? Config.AppConfig.SaveLocation
-                                            : Path.Combine(AppContext.BaseDirectory, Config.AppConfig.SaveFilename);
-                    StreamWriter sw = new(SaveLocation);
-                    sw.WriteLine(string.Join('\n', opt.Where(x => x.Length > 0).Select(x => x)));
-                    sw.Close();
-                    //Ask user whether want to open the result file
-                    Console.WriteLine(Config.AppConfig.ValidateFileLocations.Any()
-                                        ? "The results are saved to {0}, \npress [Y] key open the file, [V] key validate the result, [M] key return to main menu OR any key to close."
-                                        : "The results are saved to {0}, \npress [Y] key open the file, [M] key return to main menu OR any key to close.", SaveLocation);
-
-                    //Do things based on the key pressed
-                    switch (Console.ReadKey().Key)
-                    {
-                        case ConsoleKey.Y:
-                            {
-                                Utils.OpenEditor(!string.IsNullOrEmpty(Config.AppConfig.SaveFilename)
-                                                    ? SaveLocation
-                                                    : AppContext.BaseDirectory + Config.AppConfig.SaveFilename);
-                                break;
-                            }
-                        case ConsoleKey.V:
-                            if (Config.AppConfig.ValidateFileLocations.Any())
-                            {
-                                ValidateResults(opt, Config.AppConfig.ValidateFileLocations.Where(Path.Exists));
-                            }
-                            break;
-                        case ConsoleKey.M:
-                            Console.Beep();
-                            break;
-                        default:
-                            Environment.Exit(0);
-                            break;
-                    }
-
-                }
             }
-            #endregion
-            #region Validation mode
-            else
-            {
-                Console.WriteLine($"Validation only mode is Enabled\nThe file will be analyzed: {ValidateFile}\nValidation source(s): {SourceFile}");
-                Console.WriteLine("Press any key to start validation process...");
 
-                string[] SourceFileSplited = SourceFile.Split(',').Select(x => x.Trim()).ToArray();
-                if (!File.Exists(ValidateFile) | (SourceFileSplited.Where(File.Exists).Count() != SourceFileSplited.Length))
-                {
-                    Console.WriteLine("\nInput path is not exist.\nPress any key to exit...");
-                    Console.ReadKey();
+            //Get files
+            FilesArray = File.GetAttributes(DatasetPath).HasFlag(FileAttributes.Directory)
+            ? Directory.GetFiles(DatasetPath, "*.txt", SearchOption.TopDirectoryOnly)
+            : [DatasetPath];
+
+            //Calcuate process time
+            Stopwatch ProcessTime = new();
+            ProcessTime.Start();
+            Console.Title = "Processing data...";
+
+            //Initialize data class
+            List<PHIData> List_PHIData = [];
+            List<string> opt = [];
+
+            for (int i = 0; i < FilesArray.Length; i++)
+            {
+                Console.Clear();
+                Console.WriteLine("Processing data...Please don't close the window");
+                Console.WriteLine("Current processing file: {0} ({1}/{2}) | {3}%\n", Path.GetFileName(FilesArray[i]), i, FilesArray.Length - 1, Math.Round((double)i / (double)FilesArray.Length * 100, 2));
+
+                using StreamReader sr = new(FilesArray[i]);
+                string RawData = sr.ReadToEnd();
+                sr.Close();
+                string Filename = Path.GetFileNameWithoutExtension(FilesArray[i]);
+                PHIData ProcessedData = ProcessRegexFromRawData(RawData);
+                List_PHIData.Add(ProcessedData);
+                opt.Add(GenerateOutput(Filename, ProcessedData));
+            }
+
+            ValidateResults(opt, [DLResult], NoMergeFile);
+
+            //Display processed time
+            ProcessTime.Stop();
+            Console.WriteLine("Done!");
+            Console.Title = "Done!";
+            Console.WriteLine("\nTotal files: {0} | Process Time: {1}ms | Memory Used: {2} MB\n", FilesArray.Length, ProcessTime.ElapsedMilliseconds, Math.Round(((float)Process.GetCurrentProcess().WorkingSet64 / 1048576), 3));
+
+            Console.WriteLine("Final result is saved to {0}", Path.Combine(AppContext.BaseDirectory, "answer.txt"));
+            Console.WriteLine("Press [Y] to open validation file OR any key to exit.");
+            switch (Console.ReadKey().Key)
+            {
+                case ConsoleKey.Y:
+                    Utils.OpenEditor("answer.txt");
+                    break;
+                default:
                     Environment.Exit(0);
-                }
-                ValidateResults([.. File.ReadAllLines(ValidateFile)], SourceFileSplited, MergeFile);
+                    break;
             }
             #endregion
 
         }
 #if !DEBUG
-            catch (Exception ex)
-            {
-
-                Console.WriteLine("An error occured: \n{0}", ex.Message);
-                Console.WriteLine("Press any to exit the program throw the debug info into IDE.");
-                Console.ReadKey();
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occured: \n{0}", ex.Message);
+            Console.ReadKey();
 #else
         catch (Exception)
         {
 #endif
             throw;
-        }
-    }
-    #endregion
-
-    #region Fetch input from console
-    internal static string GetConsoleInput()
-    {
-        //Load intro texts here, not in the loop
-        string IntroTexts = Utils.GetAssemblyResource("Concept-PHIRegex.welcome.txt");
-        while (true)
-        {
-            //Clear console
-            Console.Clear();
-            //Found previous location
-            if (!string.IsNullOrEmpty(Config.AppConfig.PreviousLocation))
-            {
-                if (Path.Exists(Config.AppConfig.PreviousLocation))
-                {
-                    Console.WriteLine($"Found previous location: {Config.AppConfig.PreviousLocation}");
-                    Console.WriteLine($"Type [Y] to use it");
-                }
-                else
-                    Config.AppConfig.PreviousLocation = string.Empty;
-            }
-            Console.Write(IntroTexts);
-            string? Input = Console.ReadLine();
-            if (Input != null)
-            {
-                Input = Input.Replace("\"", string.Empty);
-                //If input is empty, use program's location
-                if (string.IsNullOrEmpty(Input))
-                {
-                    return AppContext.BaseDirectory;
-                }
-                //If input is Y, use previous location
-                if (!string.IsNullOrEmpty(Config.AppConfig.PreviousLocation) && Input.ToUpper().Equals("Y"))
-                {
-                    return Config.AppConfig.PreviousLocation;
-                }
-                //If input is NOT empty, use input path
-                if (Path.Exists(Input))
-                {
-                    return Input;
-                }
-                Console.WriteLine("Error: The folder or file doesn't exist, please try again.");
-            }
         }
     }
     #endregion
@@ -388,7 +271,7 @@ internal partial class Program
         {
             foreach (Match MatchTime in Regex_TimeVariantOne.Cast<Match>())
             {
-                string[] DateSplited = MatchTime.Groups[2].Value.Contains('/') 
+                string[] DateSplited = MatchTime.Groups[2].Value.Contains('/')
                                         ? MatchTime.Groups[2].Value.Split('/')
                                         : MatchTime.Groups[2].Value.Split('.');
                 string ReplacedString = MatchTime.Groups[1].Value.Replace(":", string.Empty);
@@ -465,7 +348,7 @@ internal partial class Program
                 });
             }
         }
-        
+
         //Date
         MatchCollection Regex_DateVariantOne = RegexPatterns.DateVariantOne().Matches(RawData);
         if (Regex_DateVariantOne.Count > 0)
@@ -752,7 +635,6 @@ internal partial class Program
     }
     #endregion
 
-
     #region GenerateOutput
     internal static string GenerateOutput(string Filename, PHIData Data)
     {
@@ -812,7 +694,7 @@ internal partial class Program
     #endregion
 
     #region ValidateResults
-    private static void ValidateResults(List<string> opt, IEnumerable<string> ValidationSource, bool MergeFile = false)
+    private static void ValidateResults(List<string> opt, IEnumerable<string> ValidationSource, bool NoMergeFile = true)
     {
         Console.Title = "Validating data...";
 
@@ -979,90 +861,34 @@ internal partial class Program
             }
         }
 
-        if (MergeFile)
+        if (!NoMergeFile)
         {
             Console.Clear();
             List<string> newlist = [.. OutputSplited];
-            foreach (string item in MissingList.ToArray())
+            for (int mi = 0; mi < MissingList.ToArray().Length; mi++)
             {
-                string Filename = item.Split("\t")[0].Trim();
+                //Show progress
+                Console.Clear();
+                double ProcessPercent = Math.Round((double)mi / (double)MissingList.Count * 100, 2);
+                Console.WriteLine("Merging files... This may take a while...");
+                Console.WriteLine("{0}/{1} | {2}%", mi, MissingList.Count - 1, ProcessPercent);
+
+                string Filename = MissingList[mi].Split("\t")[0].Trim();
                 for (int i = 0; i < OutputSplited.Length; i++)
                 {
                     string OUT_Filename = OutputSplited[i].Split("\t")[0].Trim();
                     string ext_spt_fn = (i + 1) < OutputSplited.Length ? OutputSplited[i + 1].Split('\t')[0].Trim() : string.Empty;
                     if (Filename.Equals(OUT_Filename) && ext_spt_fn.Trim() != OUT_Filename)
                     {
-                        newlist.Insert(newlist.IndexOf(OutputSplited[i]), item);
-                        MissingList.Remove(item);
+                        newlist.Insert(newlist.IndexOf(OutputSplited[i]), MissingList[mi]);
+                        MissingList.Remove(MissingList[mi]);
                     }
                 }
             }
 
-            File.WriteAllLines("D:\\mis.txt", MissingList);
-            using StreamWriter sw = new("D:\\merged_answer.txt");
+            using StreamWriter sw = new("answer.txt");
             sw.WriteLine(string.Join('\n', newlist));
             sw.Close();
-            Console.ReadKey();
-        }
-
-        Console.WriteLine("Analyze Done!");
-        //Calculate hit-rate
-        double HitRate = (double)ValidatedList.Count / (double)ValidationSplited.Length * 100;
-
-        //Save validation result
-        (string Validation, string Mismatch, string Missing) = (!string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation)
-            ? "validated_answer.txt" : Path.Combine(AppContext.BaseDirectory, "validated_answer.txt"),
-            !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "mismatch_answer.txt"
-                                  : Path.Combine(AppContext.BaseDirectory, "mismatch_answer.txt"),
-                                  !string.IsNullOrEmpty(Config.AppConfig.ValidateResultLocation) ? "missing_answer.txt"
-                                            : Path.Combine(AppContext.BaseDirectory, "missing_answer.txt"));
-
-        //Save files
-        for (int i = 1; i < 4; i++)
-        {
-            using StreamWriter sw = new(i switch
-            {
-                1 => Validation,
-                2 => Mismatch,
-                3 => Missing,
-                _ => throw new NotImplementedException()
-            });
-            sw.WriteLine(string.Format("Report generated at {0}", DateTime.Now));
-            if (i is 1)
-            {
-                sw.WriteLine(string.Format("Validation source(s): {0}", string.Join(", ", ValidationSource.Select(x => Path.GetFileName(x)))));
-                sw.WriteLine(string.Format("Output entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length));
-                sw.WriteLine(string.Format("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2)));
-                sw.WriteLine("======================================================================");
-                sw.WriteLine(string.Join('\n', ValidatedList).Trim());
-            }
-            else
-            {
-                sw.WriteLine(i is 2
-                    ? string.Format("Mismatch entries: {0}", MismatchList.Count)
-                    : string.Format("Missing entries: {0}", MissingList.Count));
-                sw.WriteLine("======================================================================");
-                sw.WriteLine(string.Join('\n', i is 2 ? MismatchList.Select(x => $"{x.OriginalValue}\n| Correct => {x.CorrectValue}") : MissingList).Trim());
-            }
-            sw.Close();
-        }
-
-        //Show validation result
-        Console.WriteLine("\nOutput entries: {0} | Answer entries: {1}", OutputSplited.Length, ValidationSplited.Length);
-        Console.WriteLine("Correct entries: {0} | Mismatch entries: {1} | Missing entries: {2} | Hit-rate: {3}%", ValidatedList.Count, MismatchList.Count, MissingList.Count, Math.Round(HitRate, 2));
-        Console.WriteLine("Validated, Mismatch and Missing result is saved to {0}", Path.GetDirectoryName(Validation));
-        Console.WriteLine("Press [Y] to open validation file, [M] key return to main menu OR any key to exit.");
-        switch (Console.ReadKey().Key)
-        {
-            case ConsoleKey.Y:
-                Utils.OpenEditor(Validation);
-                break;
-            case ConsoleKey.M:
-                Console.Beep();
-                break;
-            default:
-                Environment.Exit(0);
-                break;
         }
     }
     #endregion

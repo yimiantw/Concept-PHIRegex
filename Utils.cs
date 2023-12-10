@@ -1,6 +1,6 @@
 ﻿using System.Collections.Frozen;
 using System.Diagnostics;
-using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace ConceptPHIRegex;
@@ -47,16 +47,21 @@ internal class Utils
         { "DEC", "12" }
     }.ToFrozenDictionary();
 
-    internal static (bool Enabled, bool MergeFile, string ValidateFile, string SourceFile) CheckValidateMode()
+    internal static (bool IsSatisfied, bool NoMergeFile, string DatasetPath, string DLResult) IsRuntimeSatisfied()
     {
         string[] CommandArgs = Environment.GetCommandLineArgs();
-        if ((CommandArgs.Contains("-V") && CommandArgs.Contains("-S"))
-            | (CommandArgs.Contains("--validate") && CommandArgs.Contains("--source")))
+        if (CommandArgs.Contains("--dataset") && CommandArgs.Contains("--result"))
         {
-            int IndexOfValidateFile = Array.FindIndex(CommandArgs, x => x.Contains("-V") | x.Contains("--validate")) + 1;
-            int IndexOfValidateSourceFile = Array.FindIndex(CommandArgs, x => x.Contains("-S") | x.Contains("--source")) + 1;
-            bool MergeFile = CommandArgs.Contains("--merge");
-            return (true, MergeFile, CommandArgs[IndexOfValidateFile], CommandArgs[IndexOfValidateSourceFile]);
+            int IndexOfDatasetPath = Array.FindIndex(CommandArgs, x => x.Contains("--dataset")) + 1;
+            int IndexOfDLResult = Array.FindIndex(CommandArgs, x => x.Contains("--result")) + 1;
+            bool NoMergeFile = CommandArgs.Contains("--no-merge");
+            string DatasetPath = CommandArgs[IndexOfDatasetPath].Replace("\"", string.Empty);
+            string DLResult = CommandArgs[IndexOfDLResult].Replace("\"", string.Empty);
+            if (!Path.Exists(DatasetPath) | !Path.Exists(DLResult))
+            {
+                return (false, false, string.Empty, string.Empty);
+            }
+            return (true, NoMergeFile, DatasetPath, DLResult);
         }
         return (false, false, string.Empty, string.Empty);
     }
@@ -65,19 +70,11 @@ internal class Utils
     => Value.Equals("DATE", StringComparison.Ordinal) | Value.Equals("TIME", StringComparison.Ordinal)
         | Value.Equals("DURATION") | Value.Equals("SET", StringComparison.Ordinal);
 
-    internal static string GetAssemblyResource(string ResourceName)
-    {
-        Assembly CurrentASM = Assembly.GetExecutingAssembly();
-        using Stream? stream = CurrentASM.GetManifestResourceStream(ResourceName) ?? throw new FileNotFoundException();
-        using StreamReader Reader = new(stream);
-        return Reader.ReadToEnd();
-    }
-
     internal static void OpenEditor(string Filename)
     {
         ProcessStartInfo StartInfo = new()
         {
-            FileName = Config.AppConfig.EditorLocation,
+            FileName = GetEditorByPlatform(),
             Arguments = Filename
         };
         try
@@ -93,8 +90,22 @@ internal class Utils
         }
     }
 
+    private static string GetEditorByPlatform()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return "notepad.exe";
+        }
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return "/Applications/Visual Studio Code.app/Contents/Resources/app/bin";
+        }
+
+        throw new NotImplementedException("The platform is unsupported");
+    }
+
     #region Convert Dates in PHI into ISO-8601 format
-    //TODO: Ugly implementation, fix it
     internal static string GetNormalizedString(ConvertForm Form, string originalData)
     {
         try
